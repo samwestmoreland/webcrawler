@@ -1,49 +1,36 @@
 package main
 
 import (
-	"fmt"
-	"html"
-	"io/ioutil"
 	"log"
 	"net/http"
+
+	"golang.org/x/net/html"
 )
 
 func main() {
-	url := "https://example.com"
+	url := "https://webscraper.io/test-sites/e-commerce/allinone"
 
 	log.Println("Visiting", url)
 
-	body, err := fetch(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(body))
-
-	// parse html
-	nodeTree, err := html.Parse(body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for node := nodeTree; node != nil; node = node.NextSibling {
-		if node.Type == html.TextNode && node.Data == "a" {
-			fmt.Println(node.Data)
-		}
-	}
-}
-
-func fetch(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	doc, err := html.Parse(resp.Body)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
-	return body, nil
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "a" {
+			log.Println("Found link:", n.FirstChild.Data)
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
 }
