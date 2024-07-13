@@ -5,6 +5,11 @@ import (
 	"net/url"
 )
 
+func IsValidURL(url string) bool {
+	_, err := url.Parse(url)
+	return err == nil
+}
+
 func Parse(url string) (*url.URL, error) {
 	return url.Parse(url)
 }

@@ -14,7 +14,11 @@ import (
 func main() {
 	startURL := "https://www.monzo.com"
 
-	crawler := NewCrawler(startURL)
+	crawler, err := NewCrawler(startURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	crawler.Crawl()
 
 	parsedURL, err := url.Parse(startURL)
 	if err != nil {
