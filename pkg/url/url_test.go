@@ -31,7 +31,7 @@ func TestIsSameSubdomain(t *testing.T) {
 		href     string
 		expected bool
 	}{
-		{"foo.com", "https://foo.com/about", true},
+		{"www.foo.com", "https://foo.com/about", true},
 		{"foo.com", "http://foo.com/contact/us", true},
 		{"foo.com", "https://yahoo.com/about", false},
 	}

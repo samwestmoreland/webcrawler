@@ -10,10 +10,10 @@ import (
 )
 
 type Crawler struct {
-	// this would be monzo.com or community.monzo.com for example
+	// this would be www.monzo.com or www.community.monzo.com for example
 	subdomain string
 
-	// this would be https://monzo.com or https://community.monzo.com
+	// this would be https://monzo.com or https://www.community.monzo.com
 	url string
 
 	// the links we found
@@ -131,13 +131,21 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 // is not parsable, it returns false
 func (c Crawler) isValidURL(href string) bool {
 	if _, err := surl.Parse(href); err != nil {
+		log.Println("Couldn't parse href:", href)
 		return false
 	}
 
 	normalisedURL, err := surl.Normalise(c.subdomain, href)
 	if err != nil {
+		log.Println("Couldn't normalise href:", href)
 		return false
 	}
 
-	return surl.IsSameSubdomain(c.subdomain, normalisedURL.Subdomain)
+	isSameSubdomain := surl.IsSameSubdomain(c.subdomain, normalisedURL.URL)
+	if !isSameSubdomain {
+		log.Printf("Href is not in the same subdomain. Href: %s, Subdomain: %s\n", href, c.subdomain)
+		return false
+	}
+
+	return true
 }

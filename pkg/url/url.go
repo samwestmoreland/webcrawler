@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const wwwPrefix = "www."
+
 type URL struct {
 	URL       string
 	Subdomain string
@@ -24,6 +26,7 @@ func Parse(u string) (*URL, error) {
 	}
 
 	return &URL{
+		URL:       u,
 		Subdomain: parsed.Hostname(),
 		Path:      parsed.Path,
 	}, nil
@@ -72,5 +75,6 @@ func IsSameSubdomain(subdomain, href string) bool {
 		return false
 	}
 
-	return subdomain == hrefURL.Hostname()
+	return strings.TrimPrefix(hrefURL.Hostname(), wwwPrefix) ==
+		strings.TrimPrefix(subdomain, wwwPrefix)
 }
