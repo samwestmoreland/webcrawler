@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	surl "github.com/samwestmoreland/webcrawler/pkg/url"
+	"github.com/samwestmoreland/webcrawler/pkg/url"
 	"golang.org/x/net/html"
 )
 
@@ -21,7 +21,7 @@ type Crawler struct {
 }
 
 func NewCrawler(u string) (*Crawler, error) {
-	parsed, err := surl.Parse(u)
+	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
@@ -130,20 +130,20 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 // it is absolute. If the URL is a relative path it will return true. If the url
 // is not parsable, it returns false
 func (c Crawler) isValidURL(href string) bool {
-	if _, err := surl.Parse(href); err != nil {
+	if _, err := url.Parse(href); err != nil {
 		log.Println("Couldn't parse href:", href)
 		return false
 	}
 
-	normalisedURL, err := surl.Normalise(c.subdomain, href)
+	normalisedURL, err := url.Normalise(c.subdomain, href)
 	if err != nil {
 		log.Println("Couldn't normalise href:", href)
 		return false
 	}
 
-	isSameSubdomain := surl.IsSameSubdomain(c.subdomain, normalisedURL.URL)
+	isSameSubdomain := url.IsSameSubdomain(c.subdomain, normalisedURL.URL)
 	if !isSameSubdomain {
-		log.Printf("Href is not in the same subdomain. Href: %s, Subdomain: %s\n", href, c.subdomain)
+		log.Printf("Href is not in the same subdomain. subdomain: %s, href: %s\n", c.subdomain, normalisedURL.URL)
 		return false
 	}
 

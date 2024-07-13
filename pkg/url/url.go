@@ -43,6 +43,7 @@ func Normalise(subdomain, href string) (*URL, error) {
 	// If hrefURL is already absolute, we just return it as is.
 	if hrefURL.IsAbs() {
 		return &URL{
+			URL:       hrefURL.String(),
 			Subdomain: hrefURL.Hostname(),
 			Path:      hrefURL.Path,
 		}, nil
@@ -56,14 +57,12 @@ func Normalise(subdomain, href string) (*URL, error) {
 	}
 
 	// Resolve the relative URL against the base URL.
-	resolvedPath := path.Join(baseURL.Path, hrefURL.Path)
-	if strings.HasPrefix(href, "/") {
-		resolvedPath = hrefURL.Path
-	}
+	resolvedURL := path.Join(baseURL.Hostname(), hrefURL.Path)
 
 	ret := &URL{
+		URL:       resolvedURL,
 		Subdomain: baseURL.Host,
-		Path:      resolvedPath,
+		Path:      hrefURL.Path,
 	}
 
 	return ret, nil

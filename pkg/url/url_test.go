@@ -12,15 +12,15 @@ func TestNormalise(t *testing.T) {
 		href     string
 		expected string
 	}{
-		{"foo.com", "about", "https://foo.com/about"},
-		{"foo.com", "/about", "https://foo.com/about"},
-		{"foo.com", "/bar/baz", "https://foo.com/bar/baz"},
+		{"foo.com", "about", "foo.com/about"},
+		{"foo.com", "/about", "foo.com/about"},
+		{"foo.com", "/bar/baz", "foo.com/bar/baz"},
 	}
 
 	for _, testCase := range testCases {
-		result, err := url.Normalise(testCase.base, testCase.href)
-		if err != nil {
-			t.Errorf("Got normalise(%q, %q) = %q, want %q", testCase.base, testCase.href, result, testCase.expected)
+		result, _ := url.Normalise(testCase.base, testCase.href)
+		if result.URL != testCase.expected {
+			t.Errorf("Got normalise(%q, %q) = %q, want %q", testCase.base, testCase.href, result.URL, testCase.expected)
 		}
 	}
 }
@@ -34,6 +34,7 @@ func TestIsSameSubdomain(t *testing.T) {
 		{"www.foo.com", "https://foo.com/about", true},
 		{"foo.com", "http://foo.com/contact/us", true},
 		{"foo.com", "https://yahoo.com/about", false},
+		{"www.monzo.com", "https://monzo.com/about/", true},
 	}
 
 	for _, testCase := range testCases {
