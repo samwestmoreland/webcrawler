@@ -6,8 +6,6 @@ import (
 )
 
 type URL struct {
-	*url.URL
-
 	Subdomain string
 	Path      string
 }
@@ -17,11 +15,20 @@ func IsValidURL(u string) bool {
 	return err == nil
 }
 
-func Parse(u string) (*url.URL, error) {
-	return url.Parse(u)
+func Parse(u string) (*URL, error) {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+
+	return &URL{
+		Subdomain: parsed.Hostname(),
+		Path:      parsed.Path,
+	}, nil
 }
 
-// Normalise resolves relative URLs into absolute URLs, remove fragments and ensure consistency.
+// Normalise resolves relative URLs into absolute URLs, removes fragments and
+// ensures consistency
 func Normalise(base, href string) (*URL, error) {
 	baseURL, err := url.Parse(base)
 	if err != nil {
@@ -41,10 +48,9 @@ func Normalise(base, href string) (*URL, error) {
 	resolvedURL := baseURL.ResolveReference(hrefURL)
 
 	ret := &URL{
-		URL: resolvedURL,
+		Subdomain: resolvedURL.Hostname(),
+		Path:      resolvedURL.Path,
 	}
-	ret.Subdomain = resolvedURL.Hostname()
-	ret.Path = resolvedURL.Path
 
 	return ret, nil
 }

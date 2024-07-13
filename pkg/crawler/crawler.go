@@ -16,12 +16,12 @@ type Crawler struct {
 	links []string
 }
 
-func NewCrawler(url string) (*Crawler, error) {
-	u, err := surl.Parse(url)
+func NewCrawler(u string) (*Crawler, error) {
+	parsed, err := surl.Parse(u)
 	if err != nil {
 		return nil, err
 	}
-	subdomain := u.Host
+	subdomain := parsed.Subdomain
 
 	return &Crawler{subdomain: subdomain}, nil
 }
@@ -104,19 +104,19 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 	return doc, nil
 }
 
-// isValidURL checks if the url is part of the same subdomain if it is absolute,
-// otherwise it returns true if the url is relative. If the url is not parsable,
-// it returns false
-func (c Crawler) isValidURL(url string) bool {
-	u, err := surl.Parse(url)
+// isValidURL checks if an href is a valid url, is part of the same subdomain if
+// it is absolute. If the URL is a relative path it will return true. If the url
+// is not parsable, it returns false
+func (c Crawler) isValidURL(href string) bool {
+	_, err := surl.Parse(href)
 	if err != nil {
 		return false
 	}
 
-	normalisedURL, err := surl.Normalise(c.subdomain, url)
+	normalisedURL, err := surl.Normalise(c.subdomain, href)
 	if err != nil {
 		return false
 	}
 
-	return u.Hostname() == normalisedURL.Host
+	return surl.IsSameSubdomain(c.subdomain, normalisedURL.Subdomain)
 }
