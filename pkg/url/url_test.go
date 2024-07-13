@@ -12,15 +12,9 @@ func TestNormalise(t *testing.T) {
 		href     string
 		expected string
 	}{
-		{"https://foo.com", "about", "https://foo.com/about"},
-		//		{"http://foo.com", "http://foo.com/contact", "http://foo.com/contact"},
-		//		{"https://foo.com", "https://foo.com/about", "https://foo.com/about"},
-		//		{"https://foo.com", "https://foo.com/about#bar", "https://foo.com/about"},
-		//		{"https://monzo.com/legal/terms-and-conditions/", "https://monzo.com/legal/fscs-information/", "https://monzo.com/legal/fscs-information/"},
-		// https://monzo.com/legal/terms-and-conditions/
-		// https://monzo.com/legal/fscs-information/
-		// https://monzo.com/legal/privacy-notice/
-
+		{"foo.com", "about", "https://foo.com/about"},
+		{"foo.com", "/about", "https://foo.com/about"},
+		{"foo.com", "/bar/baz", "https://foo.com/bar/baz"},
 	}
 
 	for _, testCase := range testCases {
@@ -32,15 +26,14 @@ func TestNormalise(t *testing.T) {
 }
 
 func TestIsSameSubdomain(t *testing.T) {
-
 	testCases := []struct {
 		base     string
 		href     string
 		expected bool
 	}{
-		{"http://foo.com/page", "https://foo.com/about", true},
-		{"http://foo.com/page", "http://foo.com/contact", true},
-		{"http://foo.com/page", "https://foo.com/about", true},
+		{"foo.com", "https://foo.com/about", true},
+		{"foo.com", "http://foo.com/contact/us", true},
+		{"foo.com", "https://yahoo.com/about", false},
 	}
 
 	for _, testCase := range testCases {
