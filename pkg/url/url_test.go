@@ -3,7 +3,7 @@ package url_test
 import (
 	"testing"
 
-	"github.com/samwestmoreland/webcrawler/src/url"
+	"github.com/samwestmoreland/webcrawler/pkg/url"
 )
 
 func TestNormalise(t *testing.T) {

@@ -1,8 +1,9 @@
 package crawler
 
 import (
+	"fmt"
 	"log"
-	"net/url"
+	"net/http"
 
 	surl "github.com/samwestmoreland/webcrawler/pkg/url"
 	"golang.org/x/net/html"
@@ -28,7 +29,7 @@ func NewCrawler(url string) (*Crawler, error) {
 func (c Crawler) Crawl() {
 }
 
-func extractLinks(doc *html.Node, host string) ([]string, error) {
+func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	var links []string
 	var (
 		invalidLinksCount int
@@ -47,28 +48,25 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 					continue
 				}
 
-				u, err := url.Parse(a.Val)
-				if err == nil && (u.Host == host || u.Host == "") {
-					if _, ok := seen[a.Val]; ok {
-						continue
-					}
-					seen[a.Val] = struct{}{}
-					normalisedURL, err := surl.Normalise(host, a.Val)
-					if err != nil {
-						log.Printf("Failed to normalise: %q, err: %v", a.Val, err)
-						erroredCount++
-						continue
-					} else {
-						log.Println("Normalised:", normalisedURL)
-					}
-					links = append(links, normalisedURL)
-					validLinksCount++
-				} else if err == nil {
-					log.Printf("Invalid URL: %q u.Host: %q", a.Val, u.Host)
+				if a.Val == "" {
+					continue
+				}
+
+				if _, ok := seen[a.Val]; ok {
+					continue
+				}
+
+				seen[a.Val] = struct{}{}
+
+				if !c.isValidURL(a.Val) {
 					invalidLinksCount++
-				} else {
-					log.Println("Invalid URL:", a.Val)
-					erroredCount++
+					continue
+				}
+
+				links = append(links, a.Val)
+				validLinksCount++
+				if validLinksCount%100 == 0 {
+					log.Println("Valid links count:", validLinksCount)
 				}
 			}
 
@@ -85,4 +83,40 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 	log.Println("Errored count:", erroredCount)
 
 	return links, nil
+}
+
+func (c Crawler) fetch(url string) (*html.Node, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error: status code %d", resp.StatusCode)
+	}
+
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return doc, nil
+}
+
+// isValidURL checks if the url is part of the same subdomain if it is absolute,
+// otherwise it returns true if the url is relative. If the url is not parsable,
+// it returns false
+func (c Crawler) isValidURL(url string) bool {
+	u, err := surl.Parse(url)
+	if err != nil {
+		return false
+	}
+
+	normalisedURL, err := surl.Normalise(c.subdomain, url)
+	if err != nil {
+		return false
+	}
+
+	return u.Hostname() == normalisedURL.Hostname()
 }
