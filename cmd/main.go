@@ -26,6 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Println("Calling extractLinks with host", parsedURL.Host)
 	links, err := extractLinks(doc, parsedURL.Host)
 	if err != nil {
 		log.Fatal(err)
@@ -63,9 +64,11 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 					seen[a.Val] = struct{}{}
 					normalisedURL, err := surl.Normalise(host, a.Val)
 					if err != nil {
-						log.Println("Invalid URL:", a.Val)
+						log.Println("Failed to normalise:", a.Val)
 						erroredCount++
 						continue
+					} else {
+						log.Println("Normalised:", normalisedURL)
 					}
 					links = append(links, normalisedURL)
 					validLinksCount++
