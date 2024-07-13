@@ -94,23 +94,29 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 					continue
 				}
 
-				if _, ok := seen[a.Val]; ok {
+				normalised, err := url.Normalise(c.subdomain, a.Val)
+				if err != nil {
+					erroredCount++
 					continue
 				}
 
+				if _, ok := seen[normalised.URL]; ok {
+					continue
+				}
 				seen[a.Val] = struct{}{}
 
-				if !c.isValidURL(a.Val) {
-					log.Println("Invalid link:", a.Val)
+				if !c.isValidURL(normalised) {
+					log.Println("Not in subdomain:", normalised.URL)
 					invalidLinksCount++
 					continue
 				}
 
-				links = append(links, a.Val)
+				links = append(links, normalised.URL)
 				validLinksCount++
-				if validLinksCount%100 == 0 {
-					log.Println("Valid links count:", validLinksCount)
-				}
+				log.Println("Found link:", normalised.URL)
+				// if validLinksCount%100 == 0 {
+				// 	log.Println("Valid links count:", validLinksCount)
+				// }
 			}
 
 		}
@@ -147,22 +153,6 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 	return doc, nil
 }
 
-// isValidURL checks if an href is a valid url, is part of the same subdomain if
-// it is absolute. If the URL is a relative path it will return true. If the url
-// is not parsable, it returns false
-func (c Crawler) isValidURL(href string) bool {
-	if _, err := url.Parse(href); err != nil {
-		return false
-	}
-
-	normalisedURL, err := url.Normalise(c.subdomain, href)
-	if err != nil {
-		return false
-	}
-
-	if !url.IsSameSubdomain(c.subdomain, normalisedURL.Subdomain) {
-		return false
-	}
-
-	return true
+func (c Crawler) isValidURL(u *url.URL) bool {
+	return url.IsSameSubdomain(c.subdomain, u.Subdomain)
 }

@@ -6,9 +6,13 @@ import (
 	"strings"
 )
 
-const wwwPrefix = "www."
+const (
+	wwwPrefix = "www."
+	scheme    = "https://"
+)
 
 type URL struct {
+	// URL must be a valid URL, i.e. with a scheme and subdomain
 	URL       string
 	Subdomain string
 	Path      string
@@ -19,14 +23,14 @@ func IsValidURL(u string) bool {
 	return err == nil
 }
 
-func Parse(u string) (*URL, error) {
+func ParseURLString(u string) (*URL, error) {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
 
 	return &URL{
-		URL:       u,
+		URL:       parsed.String(),
 		Subdomain: parsed.Hostname(),
 		Path:      parsed.Path,
 	}, nil
