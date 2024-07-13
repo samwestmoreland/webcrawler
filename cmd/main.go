@@ -13,13 +13,7 @@ func main() {
 
 	log.Println("Visiting", url)
 
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	doc, err := html.Parse(resp.Body)
+	doc, err := fetch(url)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,4 +33,19 @@ func main() {
 		}
 	}
 	f(doc)
+}
+
+func fetch(url string) (*html.Node, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return doc, nil
 }
