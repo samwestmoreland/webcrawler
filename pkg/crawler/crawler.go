@@ -17,7 +17,7 @@ type Crawler struct {
 	url string
 
 	// the links we found
-	links []string
+	links map[string]struct{}
 }
 
 func NewCrawler(u string) (*Crawler, error) {
@@ -32,20 +32,41 @@ func NewCrawler(u string) (*Crawler, error) {
 	}, nil
 }
 
+// Crawl performs a BFS traversal of the subdomain
 func (c Crawler) Crawl() error {
 	log.Println("Crawling", c.subdomain)
 
-	doc, err := c.fetch(c.url)
-	if err != nil {
-		return fmt.Errorf("error fetching %s: %w", c.subdomain, err)
+	queue := []string{c.url}
+	visitedSet := make(map[string]struct{})
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		if _, visited := visitedSet[current]; visited {
+			continue
+		}
+		visitedSet[current] = struct{}{}
+
+		doc, err := c.fetch(current)
+		if err != nil {
+			return fmt.Errorf("error fetching %s: %w", current, err)
+		}
+
+		links, err := c.extractLinks(doc)
+		if err != nil {
+			return fmt.Errorf("error extracting links: %w", err)
+		}
+
+		for _, link := range links {
+			// validation is done in extractLinks() so we can safely add to the
+			// queue here
+			queue = append(queue, link)
+		}
+
 	}
 
-	links, err := c.extractLinks(doc)
-	if err != nil {
-		return fmt.Errorf("error extracting links: %w", err)
-	}
-
-	c.links = links
+	c.links = visitedSet
 
 	return nil
 }
