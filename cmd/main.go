@@ -61,7 +61,7 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 						continue
 					}
 					seen[a.Val] = struct{}{}
-					normalisedURL, err := surl.Normalize(host, a.Val)
+					normalisedURL, err := surl.Normalise(host, a.Val)
 					if err != nil {
 						log.Println("Invalid URL:", a.Val)
 						erroredCount++

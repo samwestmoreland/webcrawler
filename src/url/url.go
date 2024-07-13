@@ -23,10 +23,15 @@ func Normalise(base, href string) (string, error) {
 	return resolvedURL.String(), nil
 }
 
-func IsSameSubdomain(base string, link string) bool {
-	u, err := url.Parse(link)
+func IsSameSubdomain(base, href string) bool {
+	baseURL, err := url.Parse(base)
 	if err != nil {
 		return false
 	}
-	return u.Hostname() == base
+	hrefURL, err := url.Parse(href)
+	if err != nil {
+		return false
+	}
+
+	return baseURL.Hostname() == hrefURL.Hostname()
 }
