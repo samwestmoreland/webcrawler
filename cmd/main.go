@@ -5,9 +5,10 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"golang.org/x/net/html"
+
+	surl "github.com/samwestmoreland/webcrawler/src/url"
 )
 
 func main() {
@@ -55,21 +56,18 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 				}
 
 				u, err := url.Parse(a.Val)
-				if err == nil && u.Host == host {
+				if err == nil && (u.Host == host || u.Host == "") {
 					if _, ok := seen[a.Val]; ok {
 						continue
 					}
 					seen[a.Val] = struct{}{}
-					links = append(links, a.Val)
-					validLinksCount++
-
-				} else if err == nil && u.Host == "" && strings.HasPrefix(a.Val, "/") {
-					// This is a relative link
-					if _, ok := seen[a.Val]; ok {
+					normalisedURL, err := surl.Normalize(host, a.Val)
+					if err != nil {
+						log.Println("Invalid URL:", a.Val)
+						erroredCount++
 						continue
 					}
-					seen[a.Val] = struct{}{}
-					links = append(links, a.Val)
+					links = append(links, normalisedURL)
 					validLinksCount++
 				} else if err == nil {
 					log.Printf("Invalid URL: %q u.Host: %q", a.Val, u.Host)
