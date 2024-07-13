@@ -131,19 +131,15 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 // is not parsable, it returns false
 func (c Crawler) isValidURL(href string) bool {
 	if _, err := url.Parse(href); err != nil {
-		log.Println("Couldn't parse href:", href)
 		return false
 	}
 
 	normalisedURL, err := url.Normalise(c.subdomain, href)
 	if err != nil {
-		log.Println("Couldn't normalise href:", href)
 		return false
 	}
 
-	isSameSubdomain := url.IsSameSubdomain(c.subdomain, normalisedURL.URL)
-	if !isSameSubdomain {
-		log.Printf("Href is not in the same subdomain. subdomain: %s, href: %s\n", c.subdomain, normalisedURL.URL)
+	if !url.IsSameSubdomain(c.subdomain, normalisedURL.Subdomain) {
 		return false
 	}
 

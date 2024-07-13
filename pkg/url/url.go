@@ -1,6 +1,7 @@
 package url
 
 import (
+	"log"
 	"net/url"
 	"path"
 	"strings"
@@ -68,12 +69,13 @@ func Normalise(subdomain, href string) (*URL, error) {
 	return ret, nil
 }
 
-func IsSameSubdomain(subdomain, href string) bool {
-	hrefURL, err := url.Parse(href)
-	if err != nil {
-		return false
+func IsSameSubdomain(subdomainA, subdomainB string) bool {
+	same := strings.TrimPrefix(subdomainA, wwwPrefix) ==
+		strings.TrimPrefix(subdomainB, wwwPrefix)
+
+	if !same {
+		log.Println("Comparing subdomains:", strings.TrimPrefix(subdomainA, wwwPrefix), strings.TrimPrefix(subdomainB, wwwPrefix))
 	}
 
-	return strings.TrimPrefix(hrefURL.Hostname(), wwwPrefix) ==
-		strings.TrimPrefix(subdomain, wwwPrefix)
+	return same
 }
