@@ -1,12 +1,19 @@
 package url
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 // Normalise resolves relative URLs into absolute URLs, remove fragments and ensure consistency.
 func Normalise(base, href string) (string, error) {
 	baseURL, err := url.Parse(base)
 	if err != nil {
 		return "", err
+	}
+
+	if baseURL.Scheme == "" {
+		return "", fmt.Errorf("base URL must have a scheme")
 	}
 
 	hrefURL, err := url.Parse(href)
@@ -19,6 +26,12 @@ func Normalise(base, href string) (string, error) {
 
 	// Strip out the fragment part, if any
 	resolvedURL.Fragment = ""
+
+	// Prefix with the base URL IF the resolved URL is relative
+	if !resolvedURL.IsAbs() {
+		resolvedURL.Scheme = baseURL.Scheme
+		resolvedURL.Host = baseURL.Host
+	}
 
 	return resolvedURL.String(), nil
 }

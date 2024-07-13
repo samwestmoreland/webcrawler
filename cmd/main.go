@@ -11,8 +11,15 @@ import (
 	surl "github.com/samwestmoreland/webcrawler/src/url"
 )
 
+type Crawler struct {
+	subdomain string
+}
+
 func main() {
 	startURL := "https://monzo.com"
+
+	crawler := Crawler{subdomain: "monzo.com"}
+
 	parsedURL, err := url.Parse(startURL)
 	if err != nil {
 		log.Fatal(err)
@@ -27,7 +34,7 @@ func main() {
 	}
 
 	log.Println("Calling extractLinks with host", parsedURL.Host)
-	links, err := extractLinks(doc, parsedURL.Host)
+	links, err := extractLinks(doc, parsedURL.Scheme+"://"+parsedURL.Host)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,7 +71,7 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 					seen[a.Val] = struct{}{}
 					normalisedURL, err := surl.Normalise(host, a.Val)
 					if err != nil {
-						log.Println("Failed to normalise:", a.Val)
+						log.Printf("Failed to normalise: %q, err: %v", a.Val, err)
 						erroredCount++
 						continue
 					} else {
@@ -94,6 +101,21 @@ func extractLinks(doc *html.Node, host string) ([]string, error) {
 	log.Println("Errored count:", erroredCount)
 
 	return links, nil
+}
+
+// isValidURL checks if the url is part of the same subdomain if it is absolute,
+// otherwise it returns true if the url is relative. If the url is not parsable,
+// it returns false
+func isValidURL(url string) bool {
+	u, err := url.Parse(url)
+	if err != nil {
+		return false
+	}
+
+	normalisedURL, err := surl.Normalise(u.Host, url)
+	if err != nil {
+		return false
+	}
 }
 
 func fetch(url string) (*html.Node, error) {

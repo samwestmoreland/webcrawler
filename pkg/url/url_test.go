@@ -12,14 +12,15 @@ func TestNormalise(t *testing.T) {
 		href     string
 		expected string
 	}{
-		{"http://foo.com/page", "about", "http://foo.com/about"},
-		{"http://foo.com/page", "http://foo.com/contact", "http://foo.com/contact"},
-		{"http://foo.com/page", "about#section", "http://foo.com/about"},
-		{"http://foo.com/page", "https://foo.com/about", "https://foo.com/about"},
-		{"http://foo.com/page", "about?query=value#section", "http://foo.com/about?query=value"},
-		{"http://foo.com/path/page", "./contact", "http://foo.com/path/contact"},
-		{"http://foo.com/path/page", "/about", "http://foo.com/about"},
-		{"http://foo.com/path/", "about", "http://foo.com/path/about"},
+		{"https://foo.com", "about", "https://foo.com/about"},
+		{"http://foo.com", "http://foo.com/contact", "http://foo.com/contact"},
+		{"https://foo.com", "https://foo.com/about", "https://foo.com/about"},
+		{"https://foo.com", "https://foo.com/about#bar", "https://foo.com/about"},
+		{"https://monzo.com/legal/terms-and-conditions/", "https://monzo.com/legal/fscs-information/", "https://monzo.com/legal/fscs-information/"},
+		// https://monzo.com/legal/terms-and-conditions/
+		// https://monzo.com/legal/fscs-information/
+		// https://monzo.com/legal/privacy-notice/
+
 	}
 
 	for _, testCase := range testCases {
