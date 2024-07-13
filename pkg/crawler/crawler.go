@@ -23,7 +23,7 @@ func NewCrawler(url string) (*Crawler, error) {
 	}
 	subdomain := u.Host
 
-	return Crawler{subdomain: subdomain}
+	return &Crawler{subdomain: subdomain}, nil
 }
 
 func (c Crawler) Crawl() {
@@ -118,5 +118,5 @@ func (c Crawler) isValidURL(url string) bool {
 		return false
 	}
 
-	return u.Hostname() == normalisedURL.Hostname()
+	return u.Hostname() == normalisedURL.Host
 }

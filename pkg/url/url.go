@@ -5,44 +5,48 @@ import (
 	"net/url"
 )
 
-func IsValidURL(url string) bool {
-	_, err := url.Parse(url)
+type URL struct {
+	*url.URL
+
+	Subdomain string
+	Path      string
+}
+
+func IsValidURL(u string) bool {
+	_, err := url.Parse(u)
 	return err == nil
 }
 
-func Parse(url string) (*url.URL, error) {
-	return url.Parse(url)
+func Parse(u string) (*url.URL, error) {
+	return url.Parse(u)
 }
 
 // Normalise resolves relative URLs into absolute URLs, remove fragments and ensure consistency.
-func Normalise(base, href string) (string, error) {
+func Normalise(base, href string) (*URL, error) {
 	baseURL, err := url.Parse(base)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if baseURL.Scheme == "" {
-		return "", fmt.Errorf("base URL must have a scheme")
+		return nil, fmt.Errorf("base URL must have a scheme")
 	}
 
 	hrefURL, err := url.Parse(href)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Resolve the relative URL against the base URL
 	resolvedURL := baseURL.ResolveReference(hrefURL)
 
-	// Strip out the fragment part, if any
-	resolvedURL.Fragment = ""
-
-	// Prefix with the base URL IF the resolved URL is relative
-	if !resolvedURL.IsAbs() {
-		resolvedURL.Scheme = baseURL.Scheme
-		resolvedURL.Host = baseURL.Host
+	ret := &URL{
+		URL: resolvedURL,
 	}
+	ret.Subdomain = resolvedURL.Hostname()
+	ret.Path = resolvedURL.Path
 
-	return resolvedURL.String(), nil
+	return ret, nil
 }
 
 func IsSameSubdomain(base, href string) bool {
