@@ -3,13 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-	"strings"
 
 	"golang.org/x/net/html"
 )
 
 func main() {
-	url := "https://webscraper.io/test-sites/e-commerce/allinone"
+	url := "https://monzo.com"
 
 	log.Println("Visiting", url)
 
@@ -20,20 +19,27 @@ func main() {
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
+		//TODO: Use a data atom here to find links instead
 		if n.Type == html.ElementNode && n.Data == "a" {
-			trimmed := strings.TrimSpace(n.FirstChild.Data)
-			if trimmed == "" {
-				return
+			attrs := n.Attr
+			for _, a := range attrs {
+				if a.Key != "href" {
+					continue
+				}
+
+				log.Println("Found link:", a.Val)
 			}
 
-			log.Println("Found link:", trimmed)
 		}
+
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			f(c)
 		}
 	}
 	f(doc)
 }
+
+func visitLinks(
 
 func fetch(url string) (*html.Node, error) {
 	resp, err := http.Get(url)
