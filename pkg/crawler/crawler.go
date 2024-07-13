@@ -13,6 +13,10 @@ type Crawler struct {
 	// this would be monzo.com or community.monzo.com for example
 	subdomain string
 
+	// this would be https://monzo.com or https://community.monzo.com
+	url string
+
+	// the links we found
 	links []string
 }
 
@@ -21,12 +25,29 @@ func NewCrawler(u string) (*Crawler, error) {
 	if err != nil {
 		return nil, err
 	}
-	subdomain := parsed.Subdomain
 
-	return &Crawler{subdomain: subdomain}, nil
+	return &Crawler{
+		subdomain: parsed.Subdomain,
+		url:       u,
+	}, nil
 }
 
-func (c Crawler) Crawl() {
+func (c Crawler) Crawl() error {
+	log.Println("Crawling", c.subdomain)
+
+	doc, err := c.fetch(c.url)
+	if err != nil {
+		return fmt.Errorf("error fetching %s: %w", c.subdomain, err)
+	}
+
+	links, err := c.extractLinks(doc)
+	if err != nil {
+		return fmt.Errorf("error extracting links: %w", err)
+	}
+
+	c.links = links
+
+	return nil
 }
 
 func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
@@ -59,6 +80,7 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 				seen[a.Val] = struct{}{}
 
 				if !c.isValidURL(a.Val) {
+					log.Println("Invalid link:", a.Val)
 					invalidLinksCount++
 					continue
 				}
@@ -108,8 +130,7 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 // it is absolute. If the URL is a relative path it will return true. If the url
 // is not parsable, it returns false
 func (c Crawler) isValidURL(href string) bool {
-	_, err := surl.Parse(href)
-	if err != nil {
+	if _, err := surl.Parse(href); err != nil {
 		return false
 	}
 

@@ -14,5 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	myCrawler.Crawl()
+	if err = myCrawler.Crawl(); err != nil {
+		log.Fatal(err)
+	}
 }
