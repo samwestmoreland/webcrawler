@@ -5,6 +5,10 @@ import (
 	"net/url"
 )
 
+func Parse(url string) (*url.URL, error) {
+	return url.Parse(url)
+}
+
 // Normalise resolves relative URLs into absolute URLs, remove fragments and ensure consistency.
 func Normalise(base, href string) (string, error) {
 	baseURL, err := url.Parse(base)

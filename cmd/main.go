@@ -11,14 +11,10 @@ import (
 	surl "github.com/samwestmoreland/webcrawler/src/url"
 )
 
-type Crawler struct {
-	subdomain string
-}
-
 func main() {
-	startURL := "https://monzo.com"
+	startURL := "https://www.monzo.com"
 
-	crawler := Crawler{subdomain: "monzo.com"}
+	crawler := NewCrawler(startURL)
 
 	parsedURL, err := url.Parse(startURL)
 	if err != nil {
