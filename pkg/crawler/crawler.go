@@ -39,8 +39,25 @@ func NewCrawler(u string) (*Crawler, error) {
 	}, nil
 }
 
+func (c Crawler) OutputResults() {
+	log.Printf("%d links found:\n", len(c.results.Links))
+	for _, link := range c.results.Links {
+		log.Println(link)
+	}
+
+	log.Printf("%d external links found:\n", len(c.results.ExternalLinks))
+	for _, link := range c.results.ExternalLinks {
+		log.Println(link)
+	}
+
+	log.Printf("%d errored links found:\n", len(c.results.ErroredLinks))
+	for _, link := range c.results.ErroredLinks {
+		log.Println(link)
+	}
+}
+
 // Crawl performs a BFS traversal of the domain
-func (c Crawler) Crawl() error {
+func (c *Crawler) Crawl() error {
 	log.Println("Crawling", c.host)
 
 	queue := []string{c.url}
@@ -79,7 +96,7 @@ func (c Crawler) Crawl() error {
 	return nil
 }
 
-func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
+func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	var links []string
 	seen := make(map[string]struct{})
 
@@ -129,7 +146,7 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 
 // fetch performs an HTTP GET request. It expects a fully qualified URL
 // to be passed in, i.e. one with a scheme and hostname
-func (c Crawler) fetch(urlToFetch string) (*html.Node, error) {
+func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
 	u, err := url.ParseURLString(urlToFetch)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing %q for fetch: %s", urlToFetch, err)
@@ -153,7 +170,7 @@ func (c Crawler) fetch(urlToFetch string) (*html.Node, error) {
 	return doc, nil
 }
 
-func (c Crawler) isValidURL(u *url.URL) bool {
+func (c *Crawler) isValidURL(u *url.URL) bool {
 	//TODO: return an error here as well
 	same, err := url.IsSameHost(c.host, u.Host)
 

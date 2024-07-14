@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	startURL := "https://www.monzo.com"
+	startURL := "https://www.thoughtmachine.net"
 
 	myCrawler, err := crawler.NewCrawler(startURL)
 	if err != nil {
@@ -17,4 +17,6 @@ func main() {
 	if err = myCrawler.Crawl(); err != nil {
 		log.Fatal(err)
 	}
+
+	myCrawler.OutputResults()
 }
