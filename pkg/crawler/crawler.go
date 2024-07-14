@@ -43,19 +43,23 @@ func NewCrawler(u string) (*Crawler, error) {
 }
 
 func (c Crawler) OutputResults() {
-	log.Printf("%d links found:\n", len(c.results.Links))
+	fmt.Printf("%d links found:\n", len(c.results.Links))
 	for _, link := range c.results.Links {
-		log.Println(link)
+		fmt.Println(link)
 	}
 
-	log.Printf("%d external links found:\n", len(c.results.ExternalLinks))
+	fmt.Println()
+
+	fmt.Printf("%d external links found:\n", len(c.results.ExternalLinks))
 	for _, link := range c.results.ExternalLinks {
-		log.Println(link)
+		fmt.Println(link)
 	}
 
-	log.Printf("%d errored links found:\n", len(c.results.ErroredLinks))
+	fmt.Println()
+
+	fmt.Printf("%d errored links found:\n", len(c.results.ErroredLinks))
 	for _, link := range c.results.ErroredLinks {
-		log.Println(link)
+		fmt.Println(link)
 	}
 }
 
@@ -93,6 +97,10 @@ func (c *Crawler) Crawl() error {
 			// validation is done in extractLinks() so we can safely add to the
 			// queue here
 			queue = append(queue, link)
+		}
+
+		if len(c.seen)%100 == 0 {
+			log.Println("Visited", len(c.seen), "links")
 		}
 	}
 
