@@ -9,6 +9,12 @@ import (
 	"golang.org/x/net/html"
 )
 
+type Results struct {
+	Links         []string
+	ExternalLinks []string
+	ErroredLinks  []string
+}
+
 type Crawler struct {
 	// www.foo.com or www.subdomain.foo.com, for example. Used for comparisons.
 	host string
@@ -18,7 +24,7 @@ type Crawler struct {
 	url string
 
 	// the links found
-	links map[string]struct{}
+	results Results
 }
 
 func NewCrawler(u string) (*Crawler, error) {
@@ -48,12 +54,15 @@ func (c Crawler) Crawl() error {
 			continue
 		}
 		visitedSet[current] = struct{}{}
+		c.results.Links = append(c.results.Links, current)
 
 		doc, err := c.fetch(current)
 		if err != nil {
-			log.Printf("error fetching %s: %s", current, err)
+			c.results.ErroredLinks = append(c.results.ErroredLinks, current)
 			continue
 		}
+
+		c.results.Links = append(c.results.Links, current)
 
 		links, err := c.extractLinks(doc)
 		if err != nil {
@@ -65,21 +74,13 @@ func (c Crawler) Crawl() error {
 			// queue here
 			queue = append(queue, link)
 		}
-
 	}
-
-	c.links = visitedSet
 
 	return nil
 }
 
 func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	var links []string
-	var (
-		invalidLinksCount int
-		validLinksCount   int
-		erroredCount      int
-	)
 	seen := make(map[string]struct{})
 
 	var f func(*html.Node)
@@ -98,7 +99,7 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 
 				normalised, err := url.Normalise(c.host, a.Val)
 				if err != nil {
-					erroredCount++
+					c.results.ErroredLinks = append(c.results.ErroredLinks, a.Val)
 					continue
 				}
 
@@ -108,17 +109,11 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 				seen[a.Val] = struct{}{}
 
 				if !c.isValidURL(normalised) {
-					log.Println("Not in subdomain:", normalised.URL)
-					invalidLinksCount++
+					c.results.ExternalLinks = append(c.results.ExternalLinks, normalised.URL)
 					continue
 				}
 
 				links = append(links, normalised.URL)
-				validLinksCount++
-				log.Println("Found link:", normalised.URL)
-				// if validLinksCount%100 == 0 {
-				// 	log.Println("Valid links count:", validLinksCount)
-				// }
 			}
 
 		}
@@ -128,10 +123,6 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 		}
 	}
 	f(doc)
-
-	log.Println("Invalid links count:", invalidLinksCount)
-	log.Println("Valid links count:", validLinksCount)
-	log.Println("Errored count:", erroredCount)
 
 	return links, nil
 }
@@ -163,6 +154,7 @@ func (c Crawler) fetch(urlToFetch string) (*html.Node, error) {
 }
 
 func (c Crawler) isValidURL(u *url.URL) bool {
+	//TODO: return an error here as well
 	same, err := url.IsSameHost(c.host, u.Host)
 
 	return err == nil && same
