@@ -141,12 +141,12 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 func (c Crawler) fetch(urlToFetch string) (*html.Node, error) {
 	u, err := url.ParseURLString(urlToFetch)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing %q for fetch: %s", urlToFetch, err)
 	}
 
 	resp, err := http.Get(u.URL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting %q: %s", urlToFetch, err)
 	}
 	defer resp.Body.Close()
 
