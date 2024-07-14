@@ -9,17 +9,18 @@ import (
 )
 
 const (
-	wwwPrefix = "www."
-	scheme    = "https://"
+	wwwPrefix     = "www."
+	defaultScheme = "https"
 )
 
 var hostnameRegex = regexp.MustCompile(`^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9]+)+$`)
 
 type URL struct {
 	// URL must be a valid URL, i.e. with a scheme and subdomain
-	URL  string
-	Host string
-	Path string
+	URL    string
+	Scheme string
+	Host   string
+	Path   string
 }
 
 func IsValidURL(u string) bool {
@@ -33,15 +34,31 @@ func ParseURLString(u string) (*URL, error) {
 		return nil, err
 	}
 
+	if parsed.Scheme == "" {
+		parsed.Scheme = defaultScheme
+	}
+
+	// Re-parse the URL with the default scheme, otherwise we end up with no host
+	parsed, err = url.Parse(parsed.String())
+	if err != nil {
+		return nil, err
+	}
+
+	// For consistency, we'll use "/" as the default path if none is provided
+	if parsed.Path == "" {
+		parsed.Path = "/"
+	}
+
 	return &URL{
-		URL:  parsed.String(),
-		Host: parsed.Hostname(),
-		Path: parsed.Path,
+		URL:    parsed.String(),
+		Scheme: parsed.Scheme,
+		Host:   parsed.Hostname(),
+		Path:   parsed.Path,
 	}, nil
 }
 
 // Normalise resolves relative URLs into absolute URLs (against the given base).
-// The base is expected to be just a subdomain, e.g. "monzo.com"
+// The base is expected to be just a subdomain, e.g. "foo.com"
 func Normalise(subdomain, href string) (*URL, error) {
 	hrefURL, err := url.Parse(href)
 	if err != nil {

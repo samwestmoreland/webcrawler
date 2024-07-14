@@ -71,3 +71,37 @@ func TestIsSameSubdomainBadInputs(t *testing.T) {
 		}
 	}
 }
+
+func TestParseURLString(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected *url.URL
+	}{
+		{"https://www.foo.com", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/", URL: "https://www.foo.com/"}},
+		{"https://www.foo.com/", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/", URL: "https://www.foo.com/"}},
+		{"https://www.foo.com/bar", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/bar", URL: "https://www.foo.com/bar"}},
+		{"https://www.foo.com/bar/", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/bar/", URL: "https://www.foo.com/bar/"}},
+		{"https://www.foo.com/bar/baz", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/bar/baz", URL: "https://www.foo.com/bar/baz"}},
+		{"www.foo.com", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/", URL: "https://www.foo.com/"}},
+	}
+
+	for _, testCase := range testCases {
+		result, err := url.ParseURLString(testCase.input)
+		if err != nil {
+			t.Errorf("Got parseURLString(%q) produced error: %v", testCase.input, err)
+		}
+
+		if result.Scheme != testCase.expected.Scheme {
+			t.Errorf("For input %q, got scheme %q, want %q", testCase.input, result.Scheme, testCase.expected.Scheme)
+		}
+		if result.Host != testCase.expected.Host {
+			t.Errorf("For input %q, got host %q, want %q", testCase.input, result.Host, testCase.expected.Host)
+		}
+		if result.Path != testCase.expected.Path {
+			t.Errorf("For input %q, got path %q, want %q", testCase.input, result.Path, testCase.expected.Path)
+		}
+		if result.URL != testCase.expected.URL {
+			t.Errorf("For input %q, got URL %q, want %q", testCase.input, result.URL, testCase.expected.URL)
+		}
+	}
+}

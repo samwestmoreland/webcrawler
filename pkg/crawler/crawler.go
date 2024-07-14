@@ -10,13 +10,14 @@ import (
 )
 
 type Crawler struct {
-	// this would be www.monzo.com or www.community.monzo.com for example
+	// www.foo.com or www.subdomain.foo.com, for example. Used for comparisons.
 	host string
 
-	// this would be https://monzo.com or https://www.community.monzo.com
+	// https://foo.com or https://www.subdomain.foo.com, for example. A
+	// visitable URL.
 	url string
 
-	// the links we found
+	// the links found
 	links map[string]struct{}
 }
 
@@ -50,7 +51,8 @@ func (c Crawler) Crawl() error {
 
 		doc, err := c.fetch(current)
 		if err != nil {
-			return fmt.Errorf("error fetching %s: %w", current, err)
+			log.Printf("error fetching %s: %s", current, err)
+			continue
 		}
 
 		links, err := c.extractLinks(doc)
@@ -136,8 +138,13 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 
 // fetch performs an HTTP GET request. It expects a fully qualified URL
 // to be passed in, i.e. one with a scheme and hostname
-func (c Crawler) fetch(url string) (*html.Node, error) {
-	resp, err := http.Get(url)
+func (c Crawler) fetch(urlToFetch string) (*html.Node, error) {
+	u, err := url.ParseURLString(urlToFetch)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Get(u.URL)
 	if err != nil {
 		return nil, err
 	}
