@@ -11,7 +11,7 @@ import (
 
 type Crawler struct {
 	// this would be www.monzo.com or www.community.monzo.com for example
-	subdomain string
+	host string
 
 	// this would be https://monzo.com or https://www.community.monzo.com
 	url string
@@ -21,20 +21,20 @@ type Crawler struct {
 }
 
 func NewCrawler(u string) (*Crawler, error) {
-	parsed, err := url.Parse(u)
+	parsed, err := url.ParseURLString(u)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Crawler{
-		subdomain: parsed.Subdomain,
-		url:       u,
+		host: parsed.Host,
+		url:  u,
 	}, nil
 }
 
-// Crawl performs a BFS traversal of the subdomain
+// Crawl performs a BFS traversal of the domain
 func (c Crawler) Crawl() error {
-	log.Println("Crawling", c.subdomain)
+	log.Println("Crawling", c.host)
 
 	queue := []string{c.url}
 	visitedSet := make(map[string]struct{})
@@ -94,7 +94,7 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 					continue
 				}
 
-				normalised, err := url.Normalise(c.subdomain, a.Val)
+				normalised, err := url.Normalise(c.host, a.Val)
 				if err != nil {
 					erroredCount++
 					continue
@@ -154,5 +154,7 @@ func (c Crawler) fetch(url string) (*html.Node, error) {
 }
 
 func (c Crawler) isValidURL(u *url.URL) bool {
-	return url.IsSameSubdomain(c.subdomain, u.Subdomain)
+	same, err := url.IsSameHost(c.host, u.Host)
+
+	return err == nil && same
 }

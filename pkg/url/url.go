@@ -1,8 +1,10 @@
 package url
 
 import (
+	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -11,11 +13,13 @@ const (
 	scheme    = "https://"
 )
 
+var hostnameRegex = regexp.MustCompile(`^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9]+)+$`)
+
 type URL struct {
 	// URL must be a valid URL, i.e. with a scheme and subdomain
-	URL       string
-	Subdomain string
-	Path      string
+	URL  string
+	Host string
+	Path string
 }
 
 func IsValidURL(u string) bool {
@@ -30,9 +34,9 @@ func ParseURLString(u string) (*URL, error) {
 	}
 
 	return &URL{
-		URL:       parsed.String(),
-		Subdomain: parsed.Hostname(),
-		Path:      parsed.Path,
+		URL:  parsed.String(),
+		Host: parsed.Hostname(),
+		Path: parsed.Path,
 	}, nil
 }
 
@@ -47,9 +51,9 @@ func Normalise(subdomain, href string) (*URL, error) {
 	// If hrefURL is already absolute, we just return it as is.
 	if hrefURL.IsAbs() {
 		return &URL{
-			URL:       hrefURL.String(),
-			Subdomain: hrefURL.Hostname(),
-			Path:      hrefURL.Path,
+			URL:  hrefURL.String(),
+			Host: hrefURL.Hostname(),
+			Path: hrefURL.Path,
 		}, nil
 	}
 
@@ -64,15 +68,23 @@ func Normalise(subdomain, href string) (*URL, error) {
 	resolvedURL := path.Join(baseURL.Hostname(), hrefURL.Path)
 
 	ret := &URL{
-		URL:       resolvedURL,
-		Subdomain: baseURL.Host,
-		Path:      hrefURL.Path,
+		URL:  resolvedURL,
+		Host: baseURL.Host,
+		Path: hrefURL.Path,
 	}
 
 	return ret, nil
 }
 
-func IsSameSubdomain(subdomainA, subdomainB string) bool {
-	return strings.TrimPrefix(subdomainA, wwwPrefix) ==
-		strings.TrimPrefix(subdomainB, wwwPrefix)
+func IsSameHost(hostA, hostB string) (bool, error) {
+	if !hostnameRegex.MatchString(hostA) {
+		return false, fmt.Errorf("invalid host: %q", hostA)
+	}
+
+	if !hostnameRegex.MatchString(hostB) {
+		return false, fmt.Errorf("invalid host: %q", hostB)
+	}
+
+	return strings.TrimPrefix(hostA, wwwPrefix) ==
+		strings.TrimPrefix(hostB, wwwPrefix), nil
 }

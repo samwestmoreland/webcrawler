@@ -25,23 +25,49 @@ func TestNormalise(t *testing.T) {
 	}
 }
 
-func TestIsSameSubdomain(t *testing.T) {
+func TestIsSameHost(t *testing.T) {
 	testCases := []struct {
-		base     string
-		href     string
-		expected bool
+		base        string
+		href        string
+		expected    bool
+		expectedErr bool
 	}{
-		{"www.foo.com", "https://foo.com/about", true},
-		{"foo.com", "http://foo.com/contact/us", true},
-		{"foo.com", "https://yahoo.com/about", false},
-		{"www.monzo.com", "https://monzo.com/about/", true},
+		{"www.foo.com", "foo.com", true, false},
+		{"foo.com", "www.foo.com", true, false},
+		{"foo.com", "yahoo.com", false, false},
 	}
 
 	for _, testCase := range testCases {
-		result := url.IsSameSubdomain(testCase.base, testCase.href)
+		result, err := url.IsSameHost(testCase.base, testCase.href)
+		if err != nil {
+			t.Errorf("isSameHost(%q, %q) produced error: %v", testCase.base, testCase.href, err)
+		}
+
 		if result != testCase.expected {
-			t.Errorf("Got isSameSubdomain(%q, %q) = %v, want %v", testCase.base, testCase.href, result, testCase.expected)
+			t.Errorf("Got isSameHost(%q, %q) = %v, want %v", testCase.base, testCase.href, result, testCase.expected)
 		}
 	}
+}
 
+func TestIsSameSubdomainBadInputs(t *testing.T) {
+	testCases := []struct {
+		base        string
+		href        string
+		expectedErr bool
+	}{
+		{"http://www.foo.com", "foo.com", true},
+		{"kangaroo", "www.foo.com", true},
+		{"foo.com", "yahoo.com/woohoo", true},
+		{"foo.com", "foo.com", false},
+		{"foocom/bar", "foo.com", true},
+		{"zanzibar.xyz", "foo.com", false},
+		{"foo.com", "zanzibar.xyz/a/b/c/", true},
+	}
+
+	for _, testCase := range testCases {
+		_, err := url.IsSameHost(testCase.base, testCase.href)
+		if (err != nil) != testCase.expectedErr {
+			t.Errorf("Got isSameHost(%q, %q) = %v, want %v", testCase.base, testCase.href, err, testCase.expectedErr)
+		}
+	}
 }
