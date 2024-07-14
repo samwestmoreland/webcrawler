@@ -2,8 +2,11 @@ package crawler
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/samwestmoreland/webcrawler/pkg/url"
 	"golang.org/x/net/html"
@@ -27,8 +30,12 @@ type Crawler struct {
 	results Results
 
 	seen map[string]struct{}
+
+	// log file
+	logFile io.Writer
 }
 
+// NewCrawler creates a new Crawler
 func NewCrawler(u string) (*Crawler, error) {
 	parsed, err := url.ParseURLString(u)
 	if err != nil {
@@ -39,33 +46,65 @@ func NewCrawler(u string) (*Crawler, error) {
 		host: parsed.Host,
 		url:  u,
 		seen: make(map[string]struct{}),
+		// write to stdout by default
+		logFile: os.Stdout,
 	}, nil
 }
 
-func (c Crawler) OutputResults() {
-	fmt.Printf("%d links found:\n", len(c.results.Links))
+func NewCrawlerWithLogFile(u string, logFile io.Writer) (*Crawler, error) {
+	crawler, err := NewCrawler(u)
+	if err != nil {
+		return nil, err
+	}
+
+	crawler.logFile = logFile
+	return crawler, nil
+}
+
+func (c *Crawler) log(msg string) {
+	msg = fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), msg)
+	if _, err := c.logFile.Write([]byte(msg)); err != nil {
+		log.Println(err)
+	}
+}
+
+func (c *Crawler) OutputResults() {
+	// Write the links to the log file
+	c.logFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.results.Links))))
 	for _, link := range c.results.Links {
-		fmt.Println(link)
+		if _, err := c.logFile.Write([]byte(link + "\n")); err != nil {
+			log.Println(err)
+		}
 	}
+	c.logFile.Write([]byte("\n"))
 
-	fmt.Println()
-
-	fmt.Printf("%d external links found:\n", len(c.results.ExternalLinks))
+	c.logFile.Write([]byte(fmt.Sprintf("external links found: %d\n", len(c.results.ExternalLinks))))
 	for _, link := range c.results.ExternalLinks {
-		fmt.Println(link)
+		if _, err := c.logFile.Write([]byte(link + "\n")); err != nil {
+			log.Println(err)
+		}
 	}
+	c.logFile.Write([]byte("\n"))
 
-	fmt.Println()
-
-	fmt.Printf("%d errored links found:\n", len(c.results.ErroredLinks))
+	c.logFile.Write([]byte(fmt.Sprintf("errored links found: %d\n", len(c.results.ErroredLinks))))
 	for _, link := range c.results.ErroredLinks {
-		fmt.Println(link)
+		if _, err := c.logFile.Write([]byte(link + "\n")); err != nil {
+			log.Println(err)
+		}
 	}
+
+	// Print totals to stdout
+	fmt.Printf("links found: %d\n", len(c.results.Links))
+	fmt.Printf("external links found: %d\n", len(c.results.ExternalLinks))
+	fmt.Printf("errored links found: %d\n", len(c.results.ErroredLinks))
 }
 
 // Crawl performs a BFS traversal of the domain
 func (c *Crawler) Crawl() error {
-	log.Println("Crawling", c.host)
+	c.log(fmt.Sprintf("Crawling %s\n", c.url))
+	if c.logFile != os.Stdout {
+		fmt.Printf("Crawling %s\n", c.url)
+	}
 
 	queue := []string{c.url}
 	visitedSet := make(map[string]struct{})
@@ -74,7 +113,10 @@ func (c *Crawler) Crawl() error {
 		current := queue[0]
 		queue = queue[1:]
 
+		c.log(fmt.Sprintf("Visiting %s\n", current))
+
 		if _, visited := visitedSet[current]; visited {
+			c.log(fmt.Sprintf("Already visited %s\n", current))
 			continue
 		}
 		visitedSet[current] = struct{}{}
@@ -97,10 +139,6 @@ func (c *Crawler) Crawl() error {
 			// validation is done in extractLinks() so we can safely add to the
 			// queue here
 			queue = append(queue, link)
-		}
-
-		if len(c.seen)%100 == 0 {
-			log.Println("Visited", len(c.seen), "links")
 		}
 	}
 
