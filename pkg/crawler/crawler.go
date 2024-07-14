@@ -134,6 +134,8 @@ func (c Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	return links, nil
 }
 
+// fetch performs an HTTP GET request. It expects a fully qualified URL
+// to be passed in, i.e. one with a scheme and hostname
 func (c Crawler) fetch(url string) (*html.Node, error) {
 	resp, err := http.Get(url)
 	if err != nil {
