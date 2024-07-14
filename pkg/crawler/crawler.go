@@ -25,6 +25,8 @@ type Crawler struct {
 
 	// the links found
 	results Results
+
+	seen map[string]struct{}
 }
 
 func NewCrawler(u string) (*Crawler, error) {
@@ -36,6 +38,7 @@ func NewCrawler(u string) (*Crawler, error) {
 	return &Crawler{
 		host: parsed.Host,
 		url:  u,
+		seen: make(map[string]struct{}),
 	}, nil
 }
 
@@ -98,7 +101,6 @@ func (c *Crawler) Crawl() error {
 
 func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	var links []string
-	seen := make(map[string]struct{})
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
@@ -120,10 +122,10 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 					continue
 				}
 
-				if _, ok := seen[normalised.URL]; ok {
+				if _, ok := c.seen[normalised.URL]; ok {
 					continue
 				}
-				seen[a.Val] = struct{}{}
+				c.seen[a.Val] = struct{}{}
 
 				if !c.isValidURL(normalised) {
 					c.results.ExternalLinks = append(c.results.ExternalLinks, normalised.URL)
