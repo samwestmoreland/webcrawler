@@ -171,7 +171,7 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 				if _, ok := c.seen[normalised.URL]; ok {
 					continue
 				}
-				c.seen[a.Val] = struct{}{}
+				c.seen[normalised.URL] = struct{}{}
 
 				if !c.isValidURL(normalised) {
 					c.results.ExternalLinks = append(c.results.ExternalLinks, normalised.URL)
