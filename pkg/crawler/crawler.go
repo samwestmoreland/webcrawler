@@ -29,6 +29,7 @@ type Crawler struct {
 	// the links found
 	results Results
 
+	// links we've already seen
 	seen map[string]struct{}
 
 	// log file
@@ -113,22 +114,29 @@ func (c *Crawler) Crawl() error {
 		current := queue[0]
 		queue = queue[1:]
 
-		c.log(fmt.Sprintf("Visiting %s\n", current))
-
-		if _, visited := visitedSet[current]; visited {
-			c.log(fmt.Sprintf("Already visited %s\n", current))
-			continue
-		}
-		visitedSet[current] = struct{}{}
-		c.results.Links = append(c.results.Links, current)
-
-		doc, err := c.fetch(current)
+		fetchableURL, err := url.ParseURLString(current)
 		if err != nil {
 			c.results.ErroredLinks = append(c.results.ErroredLinks, current)
 			continue
 		}
 
-		c.results.Links = append(c.results.Links, current)
+		if _, visited := visitedSet[fetchableURL.URL]; visited {
+			c.log(fmt.Sprintf("Already visited %s\n", fetchableURL.URL))
+			continue
+		}
+		visitedSet[fetchableURL.URL] = struct{}{}
+
+		c.log(fmt.Sprintf("Visiting %s\n", fetchableURL.URL))
+
+		doc, err := c.fetch(fetchableURL.URL)
+		if err != nil {
+			c.results.ErroredLinks = append(c.results.ErroredLinks, current)
+			continue
+		}
+
+		// Add the parsed URL to results slice. It's been normalised so this
+		// should avoid duplicates
+		c.results.Links = append(c.results.Links, fetchableURL.URL)
 
 		links, err := c.extractLinks(doc)
 		if err != nil {
@@ -136,9 +144,18 @@ func (c *Crawler) Crawl() error {
 		}
 
 		for _, link := range links {
-			// validation is done in extractLinks() so we can safely add to the
-			// queue here
+			// validation is done in extractLinks() _and_ before we fetch, so
+			// we can safely just add to the queue here
 			queue = append(queue, link)
+		}
+
+		// Log every 100 visited pages so we know we're making progress
+		if len(visitedSet)%100 == 0 {
+			c.log(fmt.Sprintf("Visited %d pages\n", len(visitedSet)))
+
+			if c.logFile != os.Stdout {
+				fmt.Printf("Visited %d pages\n", len(visitedSet))
+			}
 		}
 	}
 
@@ -180,7 +197,6 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 
 				links = append(links, normalised.URL)
 			}
-
 		}
 
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
@@ -195,12 +211,7 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 // fetch performs an HTTP GET request. It expects a fully qualified URL
 // to be passed in, i.e. one with a scheme and hostname
 func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
-	u, err := url.ParseURLString(urlToFetch)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing %q for fetch: %s", urlToFetch, err)
-	}
-
-	resp, err := http.Get(u.URL)
+	resp, err := http.Get(urlToFetch)
 	if err != nil {
 		return nil, fmt.Errorf("error getting %q: %s", urlToFetch, err)
 	}

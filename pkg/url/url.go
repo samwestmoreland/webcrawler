@@ -85,9 +85,10 @@ func Normalise(subdomain, href string) (*URL, error) {
 	resolvedURL := path.Join(baseURL.Hostname(), hrefURL.Path)
 
 	ret := &URL{
-		URL:  resolvedURL,
-		Host: baseURL.Host,
-		Path: hrefURL.Path,
+		URL:    resolvedURL,
+		Scheme: baseURL.Scheme,
+		Host:   baseURL.Host,
+		Path:   hrefURL.Path,
 	}
 
 	return ret, nil
