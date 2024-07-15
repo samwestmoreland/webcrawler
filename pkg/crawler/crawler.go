@@ -34,6 +34,9 @@ type Crawler struct {
 
 	// log file
 	logFile io.Writer
+
+	// the amount of time it took to crawl the site
+	totalTime time.Duration
 }
 
 // NewCrawler creates a new Crawler
@@ -107,6 +110,16 @@ func (c *Crawler) Crawl() error {
 		fmt.Printf("Crawling %s\n", c.url)
 	}
 
+	start := time.Now()
+	defer func() {
+		c.totalTime = time.Since(start)
+		// print the time to two decimal places
+		c.log(fmt.Sprintf("crawling took %.2f seconds\n", c.totalTime.Seconds()))
+		if c.logFile != os.Stdout {
+			fmt.Printf("crawling took %.2f seconds\n", c.totalTime.Seconds())
+		}
+	}()
+
 	queue := []string{c.url}
 	visitedSet := make(map[string]struct{})
 
@@ -151,10 +164,10 @@ func (c *Crawler) Crawl() error {
 
 		// Log every 100 visited pages so we know we're making progress
 		if len(visitedSet)%100 == 0 {
-			c.log(fmt.Sprintf("Visited %d pages\n", len(visitedSet)))
+			c.log(fmt.Sprintf("visited %d pages\n", len(visitedSet)))
 
 			if c.logFile != os.Stdout {
-				fmt.Printf("Visited %d pages\n", len(visitedSet))
+				fmt.Printf("visited %d pages\n", len(visitedSet))
 			}
 		}
 	}
