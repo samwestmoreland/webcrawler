@@ -12,10 +12,22 @@ import (
 	"golang.org/x/net/html"
 )
 
+const (
+	defaultMaxRetriesOnStatusAccepted    = 5
+	defaultStatusAcceptedPollingInterval = 5 * time.Second
+	defaultRequestTimeout                = 5 * time.Second
+	defaultLogFileName                   = "crawler.log"
+)
+
+type erroredLink struct {
+	url      string
+	errorMsg string
+}
+
 type Results struct {
 	Links         []string
 	ExternalLinks []string
-	ErroredLinks  []string
+	ErroredLinks  []erroredLink
 }
 
 type Crawler struct {
@@ -37,26 +49,47 @@ type Crawler struct {
 
 	// the amount of time it took to crawl the site
 	totalTime time.Duration
+
+	// used by fetch() to set a timeout on GET requests
+	requestTimeout time.Duration
+
+	client *http.Client
+
+	// maximum number of retries on status code 202
+	statusAcceptedMaxRetries      int
+	statusAcceptedPollingInterval time.Duration
 }
 
 // NewCrawler creates a new Crawler
-func NewCrawler(u string) (*Crawler, error) {
+func NewDefaultCrawler(u string) (*Crawler, error) {
 	parsed, err := url.ParseURLString(u)
 	if err != nil {
 		return nil, err
 	}
 
+	logFile, err := os.OpenFile(defaultLogFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		return nil, err
+	}
+
+	var httpClient = &http.Client{
+		Timeout: defaultRequestTimeout,
+	}
+
 	return &Crawler{
-		host: parsed.Host,
-		url:  u,
-		seen: make(map[string]struct{}),
-		// write to stdout by default
-		logFile: os.Stdout,
+		host:                          parsed.Host,
+		url:                           u,
+		seen:                          make(map[string]struct{}),
+		logFile:                       logFile,
+		requestTimeout:                defaultRequestTimeout,
+		client:                        httpClient,
+		statusAcceptedMaxRetries:      defaultMaxRetriesOnStatusAccepted,
+		statusAcceptedPollingInterval: defaultStatusAcceptedPollingInterval,
 	}, nil
 }
 
-func NewCrawlerWithLogFile(u string, logFile io.Writer) (*Crawler, error) {
-	crawler, err := NewCrawler(u)
+func NewCrawler(u string, logFile io.Writer) (*Crawler, error) {
+	crawler, err := NewDefaultCrawler(u)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +125,7 @@ func (c *Crawler) OutputResults() {
 
 	c.logFile.Write([]byte(fmt.Sprintf("errored links found: %d\n", len(c.results.ErroredLinks))))
 	for _, link := range c.results.ErroredLinks {
-		if _, err := c.logFile.Write([]byte(link + "\n")); err != nil {
+		if _, err := c.logFile.Write([]byte(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg))); err != nil {
 			log.Println(err)
 		}
 	}
@@ -100,7 +133,12 @@ func (c *Crawler) OutputResults() {
 	// Print totals to stdout
 	fmt.Printf("links found: %d\n", len(c.results.Links))
 	fmt.Printf("external links found: %d\n", len(c.results.ExternalLinks))
-	fmt.Printf("errored links found: %d\n", len(c.results.ErroredLinks))
+	fmt.Printf("links that errorred\n", len(c.results.ErroredLinks))
+	c.log(fmt.Sprintf("crawling took %.2f seconds\n", c.totalTime.Seconds()))
+	if c.logFile != os.Stdout {
+		fmt.Printf("crawling took %.2f seconds\n", c.totalTime.Seconds())
+		fmt.Printf("please see %s for results\n", c.logFile.Name())
+	}
 }
 
 // Crawl performs a BFS traversal of the domain
@@ -113,11 +151,6 @@ func (c *Crawler) Crawl() error {
 	start := time.Now()
 	defer func() {
 		c.totalTime = time.Since(start)
-		// print the time to two decimal places
-		c.log(fmt.Sprintf("crawling took %.2f seconds\n", c.totalTime.Seconds()))
-		if c.logFile != os.Stdout {
-			fmt.Printf("crawling took %.2f seconds\n", c.totalTime.Seconds())
-		}
 	}()
 
 	queue := []string{c.url}
@@ -129,7 +162,7 @@ func (c *Crawler) Crawl() error {
 
 		fetchableURL, err := url.ParseURLString(current)
 		if err != nil {
-			c.results.ErroredLinks = append(c.results.ErroredLinks, current)
+			c.results.ErroredLinks = append(c.results.ErroredLinks, erroredLink{url: current, errorMsg: err.Error()})
 			continue
 		}
 
@@ -143,7 +176,7 @@ func (c *Crawler) Crawl() error {
 
 		doc, err := c.fetch(fetchableURL.URL)
 		if err != nil {
-			c.results.ErroredLinks = append(c.results.ErroredLinks, current)
+			c.results.ErroredLinks = append(c.results.ErroredLinks, erroredLink{url: fetchableURL.URL, errorMsg: err.Error()})
 			continue
 		}
 
@@ -194,7 +227,7 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 
 				normalised, err := url.Normalise(c.host, a.Val)
 				if err != nil {
-					c.results.ErroredLinks = append(c.results.ErroredLinks, a.Val)
+					c.results.ErroredLinks = append(c.results.ErroredLinks, erroredLink{url: a.Val, errorMsg: err.Error()})
 					continue
 				}
 
@@ -224,22 +257,34 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 // fetch performs an HTTP GET request. It expects a fully qualified URL
 // to be passed in, i.e. one with a scheme and hostname
 func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
-	resp, err := http.Get(urlToFetch)
-	if err != nil {
-		return nil, fmt.Errorf("error getting %q: %s", urlToFetch, err)
-	}
-	defer resp.Body.Close()
+	for retries := 0; retries < c.statusAcceptedMaxRetries; retries++ {
+		resp, err := c.client.Get(urlToFetch)
+		if err != nil {
+			return nil, fmt.Errorf("error getting %q: %s", urlToFetch, err)
+		}
+		defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error: status code %d", resp.StatusCode)
+		if resp.StatusCode == http.StatusAccepted {
+			c.log(fmt.Sprintf("Status code %d, sleeping for %s seconds before retrying\n",
+				resp.StatusCode,
+				c.statusAcceptedPollingInterval.Seconds()))
+			time.Sleep(c.statusAcceptedPollingInterval)
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("error: status code %d", resp.StatusCode)
+		}
+
+		doc, err := html.Parse(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		return doc, nil
 	}
 
-	doc, err := html.Parse(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return doc, nil
+	return nil, fmt.Errorf("failed to fetch %q after %d retries", urlToFetch, c.statusAcceptedMaxRetries)
 }
 
 func (c *Crawler) isValidURL(u *url.URL) bool {

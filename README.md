@@ -4,8 +4,12 @@ To run the crawler:
 To run unit tests:
 `go test ./...`
 
+How it works:
+The crawler 
+
 To-dos:
 - Print a message at the end telling the user to check the log file for any links that were found
 - Add concurrency
-- Calculate the time taken and print it
-- Add context to the fetch
+- Make sure every function has a comment
+- Get rid of TODOs before submission
+- Create a config object

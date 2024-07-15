@@ -2,21 +2,14 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/samwestmoreland/webcrawler/pkg/crawler"
 )
 
 func main() {
-	startURL := "https://www.thoughtmachine.net"
+	startURL := "https://www.monzo.com"
 
-	logFile, err := os.OpenFile("crawler.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer logFile.Close()
-
-	myCrawler, err := crawler.NewCrawlerWithLogFile(startURL, logFile)
+	myCrawler, err := crawler.NewDefaultCrawler(startURL)
 	if err != nil {
 		log.Fatal(err)
 	}
