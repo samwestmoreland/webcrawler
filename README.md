@@ -12,4 +12,9 @@ To-dos:
 - Add concurrency
 - Make sure every function has a comment
 - Get rid of TODOs before submission
-- Create a config object
+- Expose subset of config options
+- Split out crawl logic
+- More test coverage
+
+Improvements:
+- Keep track of link parents, so that if a dead link is found we can know where it was linked from, for example.
