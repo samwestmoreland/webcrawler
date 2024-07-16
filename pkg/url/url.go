@@ -65,7 +65,7 @@ func Normalise(subdomain, href string) (*URL, error) {
 		return nil, err
 	}
 
-	// If hrefURL is already absolute, we just return it as is.
+	// If hrefURL is already absolute, we just return it as is
 	if hrefURL.IsAbs() {
 		return &URL{
 			URL:  hrefURL.String(),
