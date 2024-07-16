@@ -8,8 +8,6 @@ How it works:
 The crawler 
 
 To-dos:
-- Print a message at the end telling the user to check the log file for any links that were found
-- Add concurrency
 - Make sure every function has a comment
 - Get rid of TODOs before submission
 - Expose subset of config options

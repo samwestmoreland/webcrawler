@@ -2,10 +2,8 @@ package crawler
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/samwestmoreland/webcrawler/pkg/url"
@@ -16,7 +14,6 @@ const (
 	defaultMaxRetriesOnStatusAccepted    = 5
 	defaultStatusAcceptedPollingInterval = 5 * time.Second
 	defaultRequestTimeout                = 5 * time.Second
-	defaultLogFileName                   = "crawler.log"
 )
 
 type erroredLink struct {
@@ -45,9 +42,8 @@ type Crawler struct {
 	host string
 	// links we've already seen
 	seen map[string]struct{}
-	// log file
-	logFile io.Writer
 
+	logger *log.Logger
 	client *http.Client
 
 	// retry parameters on status code 202
@@ -56,7 +52,7 @@ type Crawler struct {
 }
 
 // NewCrawler creates a new Crawler
-func NewDefaultCrawler(u string) (*Crawler, error) {
+func NewDefaultCrawler(u string, logger *log.Logger) (*Crawler, error) {
 	parsed, err := url.ParseURLString(u)
 	if err != nil {
 		return nil, err
@@ -68,7 +64,7 @@ func NewDefaultCrawler(u string) (*Crawler, error) {
 
 	return &Crawler{
 		StartURL:                      u,
-		LogFileName:                   defaultLogFileName,
+		logger:                        logger,
 		RequestTimeout:                defaultRequestTimeout,
 		host:                          parsed.Host,
 		seen:                          make(map[string]struct{}),
@@ -78,61 +74,39 @@ func NewDefaultCrawler(u string) (*Crawler, error) {
 	}, nil
 }
 
-func (c *Crawler) log(msg string) {
-	msg = fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), msg)
-	if _, err := c.logFile.Write([]byte(msg)); err != nil {
-		log.Println(err)
-	}
-}
-
-func (c *Crawler) write(msg string) {
-	if _, err := c.logFile.Write([]byte(msg)); err != nil {
-		log.Println(err)
-	}
-}
-
 func (c *Crawler) OutputResults() {
 	// Write the links to the log file
-	c.write(fmt.Sprintf("links found: %d\n", len(c.Results.Links)))
+	c.logger.Printf("links found: %d\n", len(c.Results.Links))
 	for _, link := range c.Results.Links {
-		c.write(link + "\n")
+		c.logger.Printf("%s\n", link)
 	}
 
-	c.write("\n")
+	c.logger.Println()
 
-	c.write(fmt.Sprintf("external links found: %d\n", len(c.Results.ExternalLinks)))
+	c.logger.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
 	for _, link := range c.Results.ExternalLinks {
-		c.write(link + "\n")
+		c.logger.Printf("%s\n", link)
 	}
 
-	c.write("\n")
+	c.logger.Println()
 
-	c.write(fmt.Sprintf("errored links found: %d\n", len(c.Results.ErroredLinks)))
+	c.logger.Printf("errored links found: %d\n", len(c.Results.ErroredLinks))
 	for _, link := range c.Results.ErroredLinks {
-		c.write(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg))
+		c.logger.Printf("%s: %s\n", link.url, link.errorMsg)
 	}
 
-	c.write(fmt.Sprintf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds()))
+	c.logger.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
 
 	// Print totals to stdout
 	fmt.Printf("links found: %d\n", len(c.Results.Links))
 	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
 	fmt.Printf("links that errorred: %d\n", len(c.Results.ErroredLinks))
 	fmt.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
-	fmt.Printf("please see %s for Results\n", c.LogFileName)
 }
 
 // Crawl does some setup and then starts the crawl
 func (c *Crawler) Crawl() error {
-	// initialise the log file
-	logFile, err := os.OpenFile(c.LogFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		return fmt.Errorf("failed to open log file: %s", err)
-	}
-
-	c.logFile = logFile
-
-	c.log(fmt.Sprintf("crawling %s\n", c.StartURL))
+	c.logger.Printf("crawling %s\n", c.StartURL)
 	fmt.Printf("Crawling %s\n", c.StartURL)
 
 	start := time.Now()
@@ -159,12 +133,12 @@ func (c *Crawler) crawl(u string) error {
 		}
 
 		if _, visited := visitedSet[fetchableURL.URL]; visited {
-			c.log(fmt.Sprintf("Already visited %s\n", fetchableURL.URL))
+			c.logger.Printf("already visited %s\n", fetchableURL.URL)
 			continue
 		}
 		visitedSet[fetchableURL.URL] = struct{}{}
 
-		c.log(fmt.Sprintf("visiting %s\n", fetchableURL.URL))
+		c.logger.Printf("visiting %s\n", fetchableURL.URL)
 
 		doc, err := c.fetch(fetchableURL.URL)
 		if err != nil {
@@ -189,11 +163,8 @@ func (c *Crawler) crawl(u string) error {
 
 		// Log every 100 visited pages so we know we're making progress
 		if len(visitedSet)%100 == 0 {
-			c.log(fmt.Sprintf("visited %d pages\n", len(visitedSet)))
-
-			if c.logFile != os.Stdout {
-				fmt.Printf("visited %d pages\n", len(visitedSet))
-			}
+			c.logger.Printf("visited %d pages\n", len(visitedSet))
+			fmt.Printf("visited %d pages\n", len(visitedSet))
 		}
 	}
 
@@ -258,9 +229,9 @@ func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
 			defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusAccepted {
-				c.log(fmt.Sprintf("status code %d, sleeping for %.2f seconds before retrying\n",
+				c.logger.Printf("status code %d, sleeping for %d seconds before retrying\n",
 					resp.StatusCode,
-					c.statusAcceptedPollingInterval.Seconds()))
+					c.statusAcceptedPollingInterval.Seconds())
 
 				time.Sleep(c.statusAcceptedPollingInterval)
 
