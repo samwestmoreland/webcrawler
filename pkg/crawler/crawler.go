@@ -149,8 +149,7 @@ func (c *Crawler) crawl(u string) error {
 			continue
 		}
 
-		// Add the parsed URL to results slice. It's been normalised so this
-		// should avoid duplicates
+		// Add the parsed URL to results slice.
 		c.Results.Links = append(c.Results.Links, fetchableURL.URL)
 
 		links, err := c.extractLinks(doc)
