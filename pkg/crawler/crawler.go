@@ -206,7 +206,7 @@ func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 					continue
 				}
 
-				normalised, err := url.Normalise(c.Host, a.Val)
+				normalised, err := url.ResolvePath(c.Host, a.Val)
 				if err != nil {
 					c.Results.ErroredLinks = append(c.Results.ErroredLinks, erroredLink{url: a.Val, errorMsg: err.Error()})
 					continue

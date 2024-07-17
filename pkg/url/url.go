@@ -65,9 +65,9 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 	}, nil
 }
 
-// Normalise resolves relative URLs into absolute URLs (against the given base).
+// ResolvePath resolves relative URLs into absolute URLs (against the given base).
 // The base is expected to be just a subdomain, e.g. "foo.com"
-func Normalise(subdomain, href string) (*URL, error) {
+func ResolvePath(subdomain, href string) (*URL, error) {
 	// Trim any leading white spaces
 	href = strings.TrimSpace(href)
 
@@ -79,9 +79,10 @@ func Normalise(subdomain, href string) (*URL, error) {
 	// If hrefURL is already absolute, we just return it as is
 	if hrefURL.IsAbs() {
 		return &URL{
-			URL:  hrefURL.String(),
-			Host: hrefURL.Hostname(),
-			Path: hrefURL.Path,
+			Scheme: hrefURL.Scheme,
+			URL:    hrefURL.String(),
+			Host:   hrefURL.Hostname(),
+			Path:   hrefURL.Path,
 		}, nil
 	}
 

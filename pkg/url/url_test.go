@@ -6,7 +6,7 @@ import (
 	"github.com/samwestmoreland/webcrawler/pkg/url"
 )
 
-func TestNormalise(t *testing.T) {
+func TestResolvePath(t *testing.T) {
 	testCases := []struct {
 		base     string
 		href     string
@@ -18,7 +18,7 @@ func TestNormalise(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		result, _ := url.Normalise(testCase.base, testCase.href)
+		result, _ := url.ResolvePath(testCase.base, testCase.href)
 		if result.URL != testCase.expected {
 			t.Errorf("Got normalise(%q, %q) = %q, want %q", testCase.base, testCase.href, result.URL, testCase.expected)
 		}
