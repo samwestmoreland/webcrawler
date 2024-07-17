@@ -15,7 +15,7 @@ import (
 
 // TestNewCrawler tests the creation of a new Crawler instance
 func TestNewCrawler(t *testing.T) {
-	c, err := crawler.NewCrawlerWithDefaults("https://example.com")
+	c, err := crawler.NewCrawlerDiscardOutput("https://example.com")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -38,7 +38,7 @@ func TestFetch(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c, _ := crawler.NewCrawlerWithDefaults(server.URL)
+	c, _ := crawler.NewCrawlerDiscardOutput(server.URL)
 	urlToFetch, _ := url.ParseURLString(server.URL)
 
 	doc, err := c.Fetch(urlToFetch.URL)
@@ -66,7 +66,7 @@ func TestExtractLinks(t *testing.T) {
 	</body></html>`
 
 	doc, _ := html.Parse(strings.NewReader(htmlData))
-	c, _ := crawler.NewCrawlerWithDefaults("https://example.com")
+	c, _ := crawler.NewCrawlerDiscardOutput("https://example.com")
 
 	links, err := c.ExtractLinks(doc)
 	if err != nil {
@@ -127,7 +127,7 @@ func TestCrawl(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c, _ := crawler.NewCrawlerWithDefaults(server.URL)
+	c, _ := crawler.NewCrawlerDiscardOutput(server.URL)
 	err := c.Crawl()
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -141,7 +141,6 @@ func TestCrawl(t *testing.T) {
 	}
 
 	if len(c.Results.Links) != len(expectedLinks) {
-		// print the results to make it easier to debug
 		fmt.Println("Results:")
 		for _, link := range c.Results.Links {
 			fmt.Println(link)
@@ -153,6 +152,8 @@ func TestCrawl(t *testing.T) {
 		for _, link := range expectedLinks {
 			fmt.Println(link)
 		}
+
+		fmt.Println()
 
 		t.Fatalf("expected %d links, got %d", len(expectedLinks), len(c.Results.Links))
 	}
