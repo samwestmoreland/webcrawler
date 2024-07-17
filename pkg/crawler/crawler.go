@@ -101,9 +101,12 @@ func (c *Crawler) OutputResults() {
 	}
 
 	// Print stats to stdout
-	fmt.Printf("links found: %d\n", len(c.Results.Links))
+	fmt.Println()
+	fmt.Println("Crawler stats:")
+	fmt.Println("-------------")
+	fmt.Printf("links found:          %d\n", len(c.Results.Links))
 	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
-	fmt.Printf("links that errorred: %d\n", len(c.Results.ErroredLinks))
+	fmt.Printf("links that errorred:  %d\n", len(c.Results.ErroredLinks))
 	fmt.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
 }
 
@@ -163,7 +166,7 @@ func (c *Crawler) crawl(u string) error {
 			queue = append(queue, link)
 		}
 
-		// Log every 100 visited pages so we know we're making progress
+		// Log every 100 visited pages so the user knows progress is being made
 		if len(visitedSet)%100 == 0 {
 			c.logger.Printf("visited %d pages\n", len(visitedSet))
 			fmt.Printf("visited %d pages\n", len(visitedSet))
