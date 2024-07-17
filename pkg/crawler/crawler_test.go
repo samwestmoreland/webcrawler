@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/samwestmoreland/webcrawler/pkg/crawler"
-	"github.com/samwestmoreland/webcrawler/pkg/url"
 	"golang.org/x/net/html"
 )
 
@@ -38,9 +37,8 @@ func TestFetch(t *testing.T) {
 	defer server.Close()
 
 	c, _ := crawler.NewCrawlerDiscardOutput(server.URL)
-	urlToFetch, _ := url.ParseURLString(server.URL, "")
 
-	doc, err := c.Fetch(urlToFetch.URL)
+	doc, err := c.Fetch(server.URL)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -60,7 +58,7 @@ func TestFetch(t *testing.T) {
 func TestExtractLinks(t *testing.T) {
 	htmlData := `<html><body>
 	<a href="https://example.com/page1">Page1</a>
-	<a href="https://example.com/page2">Page2</a>
+	<a href=" https://example.com/page2">Page2</a>
 	<a href="https://example.com/page3">Page3</a>
 	</body></html>`
 

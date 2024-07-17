@@ -68,6 +68,9 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 // Normalise resolves relative URLs into absolute URLs (against the given base).
 // The base is expected to be just a subdomain, e.g. "foo.com"
 func Normalise(subdomain, href string) (*URL, error) {
+	// Trim any leading white spaces
+	href = strings.TrimSpace(href)
+
 	hrefURL, err := url.Parse(href)
 	if err != nil {
 		return nil, err
