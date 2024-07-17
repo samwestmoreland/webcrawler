@@ -3,6 +3,7 @@ package crawler
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -40,7 +41,7 @@ type Crawler struct {
 	LogFileName string
 
 	// www.foo.com or www.subdomain.foo.com, for example. Used for comparisons.
-	host string
+	Host string
 	// links we've already seen
 	seen map[string]struct{}
 
@@ -71,7 +72,7 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 		logger:                        logger,
 		resultsFile:                   resultsFile,
 		RequestTimeout:                defaultRequestTimeout,
-		host:                          parsed.Host,
+		Host:                          parsed.Host,
 		seen:                          make(map[string]struct{}),
 		client:                        httpClient,
 		statusAcceptedMaxRetries:      defaultMaxRetriesOnStatusAccepted,
@@ -79,6 +80,12 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 	}, nil
 }
 
+// NewCrawlerDiscardOutput creates a new Crawler with no output. Used for testing
+func NewCrawlerDiscardOutput(u string) (*Crawler, error) {
+	return NewCrawler(u, log.New(ioutil.Discard, "", 0), ioutil.Discard)
+}
+
+// OutputResults writes the results to the output file
 func (c *Crawler) OutputResults() {
 	// Write the links to the log file
 	c.resultsFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.Results.Links))))
@@ -146,7 +153,7 @@ func (c *Crawler) crawl(u string) error {
 
 		c.logger.Printf("visiting %s\n", fetchableURL.URL)
 
-		doc, err := c.fetch(fetchableURL.URL)
+		doc, err := c.Fetch(fetchableURL.URL)
 		if err != nil {
 			c.Results.ErroredLinks = append(c.Results.ErroredLinks, erroredLink{url: fetchableURL.URL, errorMsg: err.Error()})
 			continue
@@ -155,13 +162,13 @@ func (c *Crawler) crawl(u string) error {
 		// Add the parsed URL to results slice.
 		c.Results.Links = append(c.Results.Links, fetchableURL.URL)
 
-		links, err := c.extractLinks(doc)
+		links, err := c.ExtractLinks(doc)
 		if err != nil {
 			return fmt.Errorf("error extracting links: %w", err)
 		}
 
 		for _, link := range links {
-			// validation is done in extractLinks() _and_ before we fetch, so
+			// validation is done in ExtractLinks() _and_ before we fetch, so
 			// we can safely just add to the queue here
 			queue = append(queue, link)
 		}
@@ -176,8 +183,8 @@ func (c *Crawler) crawl(u string) error {
 	return nil
 }
 
-// extractLinks extracts links from the HTML document
-func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
+// ExtractLinks extracts links from the HTML document
+func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 	var links []string
 
 	var f func(*html.Node)
@@ -194,7 +201,7 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 					continue
 				}
 
-				normalised, err := url.Normalise(c.host, a.Val)
+				normalised, err := url.Normalise(c.Host, a.Val)
 				if err != nil {
 					c.Results.ErroredLinks = append(c.Results.ErroredLinks, erroredLink{url: a.Val, errorMsg: err.Error()})
 					continue
@@ -223,9 +230,9 @@ func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	return links, nil
 }
 
-// fetch performs an HTTP GET request. It expects a fully qualified URL
+// Fetch performs an HTTP GET request. It expects a fully qualified URL
 // to be passed in, i.e. one with a scheme and hostname
-func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
+func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 	poll := func(urlToFetch string) (*html.Node, error) {
 		for retries := 0; retries < c.statusAcceptedMaxRetries; retries++ {
 			resp, err := c.client.Get(urlToFetch)
@@ -279,7 +286,7 @@ func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
 
 func (c *Crawler) isValidURL(u *url.URL) bool {
 	//TODO: return an error here as well
-	same, err := url.IsSameHost(c.host, u.Host)
+	same, err := url.IsSameHost(c.Host, u.Host)
 
 	return err == nil && same
 }
