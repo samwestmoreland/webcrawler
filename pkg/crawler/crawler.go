@@ -229,7 +229,7 @@ func (c *Crawler) fetch(urlToFetch string) (*html.Node, error) {
 			defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusAccepted {
-				c.logger.Printf("status code %d, sleeping for %d seconds before retrying\n",
+				c.logger.Printf("status code %d, sleeping for %.0f seconds before retrying\n",
 					resp.StatusCode,
 					c.statusAcceptedPollingInterval.Seconds())
 
