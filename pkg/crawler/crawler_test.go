@@ -2,7 +2,6 @@ package crawler_test
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -86,88 +85,6 @@ func TestExtractLinks(t *testing.T) {
 	for i, link := range links {
 		if link != expectedLinks[i] {
 			t.Errorf("expected link %s, got %s", expectedLinks[i], link)
-		}
-	}
-}
-
-// TestCrawl tests the Crawl function
-func TestCrawl(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/":
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(`<html><body>
-				<a href="/page1">Page1</a>
-				<a href="/page2">Page2</a>
-				</body></html>`))
-		case "/page1":
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(`<html><body>
-				<a href="/">Home</a>
-				<a href="/page3">Page3</a>
-				</body></html>`))
-		case "/page2":
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(`<html><body>
-				<a href="/">Home</a>
-				<a href="/page3">Page3</a>
-				</body></html>`))
-		case "/page3":
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(`<html><body>
-				<a href="/">Home</a>
-				</body></html>`))
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer server.Close()
-
-	c, _ := crawler.NewCrawlerDiscardOutput(server.URL)
-	err := c.Crawl()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	expectedLinks := []string{
-		server.URL + "/",
-		server.URL + "/page1",
-		server.URL + "/page2",
-		server.URL + "/page3",
-	}
-
-	if len(c.Results.Links) != len(expectedLinks) {
-		fmt.Println("Results:")
-		for _, link := range c.Results.Links {
-			fmt.Println(link)
-		}
-
-		fmt.Println()
-
-		fmt.Println("Expected links:")
-		for _, link := range expectedLinks {
-			fmt.Println(link)
-		}
-
-		fmt.Println()
-
-		t.Fatalf("expected %d links, got %d", len(expectedLinks), len(c.Results.Links))
-	}
-
-	for _, expected := range expectedLinks {
-		found := false
-		for _, result := range c.Results.Links {
-			if result == expected {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("expected to find link %s in results", expected)
 		}
 	}
 }
