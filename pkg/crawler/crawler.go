@@ -122,7 +122,7 @@ func (c *Crawler) OutputResults() {
 // Crawl does some setup and then starts the crawl
 func (c *Crawler) Crawl() error {
 	c.logger.Printf("crawling %s\n", c.StartURL)
-	fmt.Printf("Crawling %s\n", c.StartURL)
+	fmt.Printf("Crawling %s\n", c.StartURL.URL)
 
 	start := time.Now()
 	defer func() {
@@ -134,7 +134,6 @@ func (c *Crawler) Crawl() error {
 
 // crawl performs a BFS traversal of the domain
 func (c *Crawler) crawl(u *url.URL) error {
-	fmt.Println("In crawl")
 	queue := []string{u.URL}
 	visitedSet := make(map[string]struct{})
 
@@ -155,12 +154,11 @@ func (c *Crawler) crawl(u *url.URL) error {
 		visitedSet[fetchableURL.URL] = struct{}{}
 
 		c.logger.Printf("visiting %s\n", fetchableURL.URL)
-		fmt.Println("visiting", fetchableURL.URL)
 
 		doc, err := c.Fetch(fetchableURL.URL)
 		if err != nil {
 			c.Results.ErroredLinks = append(c.Results.ErroredLinks, erroredLink{url: fetchableURL.URL, errorMsg: err.Error()})
-			fmt.Printf("error while fetching %s: %s\n", fetchableURL.URL, err)
+			c.logger.Printf("error fetching %s: %s\n", fetchableURL.URL, err)
 			continue
 		}
 

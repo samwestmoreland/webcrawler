@@ -35,8 +35,6 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 		scheme = "https"
 	}
 
-	fmt.Println("parsing", u)
-
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, err
