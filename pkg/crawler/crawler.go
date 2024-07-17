@@ -121,7 +121,7 @@ func (c *Crawler) OutputResults() {
 
 // Crawl does some setup and then starts the crawl
 func (c *Crawler) Crawl() error {
-	c.logger.Printf("crawling %s\n", c.StartURL)
+	c.logger.Printf("crawling %s\n", c.StartURL.URL)
 	fmt.Printf("Crawling %s\n", c.StartURL.URL)
 
 	start := time.Now()
