@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -43,8 +44,11 @@ type Crawler struct {
 	// links we've already seen
 	seen map[string]struct{}
 
-	logger *log.Logger
 	client *http.Client
+
+	// output files
+	logger      *log.Logger
+	resultsFile io.Writer
 
 	// retry parameters on status code 202
 	statusAcceptedMaxRetries      int
@@ -52,7 +56,7 @@ type Crawler struct {
 }
 
 // NewCrawler creates a new Crawler
-func NewDefaultCrawler(u string, logger *log.Logger) (*Crawler, error) {
+func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, error) {
 	parsed, err := url.ParseURLString(u)
 	if err != nil {
 		return nil, err
@@ -65,6 +69,7 @@ func NewDefaultCrawler(u string, logger *log.Logger) (*Crawler, error) {
 	return &Crawler{
 		StartURL:                      u,
 		logger:                        logger,
+		resultsFile:                   resultsFile,
 		RequestTimeout:                defaultRequestTimeout,
 		host:                          parsed.Host,
 		seen:                          make(map[string]struct{}),
@@ -76,28 +81,26 @@ func NewDefaultCrawler(u string, logger *log.Logger) (*Crawler, error) {
 
 func (c *Crawler) OutputResults() {
 	// Write the links to the log file
-	c.logger.Printf("links found: %d\n", len(c.Results.Links))
+	c.resultsFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.Results.Links))))
 	for _, link := range c.Results.Links {
-		c.logger.Printf("%s\n", link)
+		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
 	}
 
-	c.logger.Println()
+	c.resultsFile.Write([]byte("\n"))
 
-	c.logger.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
+	c.resultsFile.Write([]byte(fmt.Sprintf("external links found: %d\n", len(c.Results.ExternalLinks))))
 	for _, link := range c.Results.ExternalLinks {
-		c.logger.Printf("%s\n", link)
+		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
 	}
 
-	c.logger.Println()
+	c.resultsFile.Write([]byte("\n"))
 
-	c.logger.Printf("errored links found: %d\n", len(c.Results.ErroredLinks))
+	c.resultsFile.Write([]byte(fmt.Sprintf("errored links found: %d\n", len(c.Results.ErroredLinks))))
 	for _, link := range c.Results.ErroredLinks {
-		c.logger.Printf("%s: %s\n", link.url, link.errorMsg)
+		c.resultsFile.Write([]byte(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg)))
 	}
 
-	c.logger.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
-
-	// Print totals to stdout
+	// Print stats to stdout
 	fmt.Printf("links found: %d\n", len(c.Results.Links))
 	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
 	fmt.Printf("links that errorred: %d\n", len(c.Results.ErroredLinks))
@@ -171,6 +174,7 @@ func (c *Crawler) crawl(u string) error {
 	return nil
 }
 
+// extractLinks extracts links from the HTML document
 func (c *Crawler) extractLinks(doc *html.Node) ([]string, error) {
 	var links []string
 

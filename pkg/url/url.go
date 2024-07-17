@@ -75,13 +75,11 @@ func Normalise(subdomain, href string) (*URL, error) {
 	}
 
 	// If the href is relative, resolve it against the subdomain.
-	// We treat the subdomain as the base for relative resolution.
 	baseURL := &url.URL{
 		Scheme: "http",
 		Host:   subdomain,
 	}
 
-	// Resolve the relative URL against the base URL.
 	resolvedURL := path.Join(baseURL.Hostname(), hrefURL.Path)
 
 	ret := &URL{
