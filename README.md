@@ -1,5 +1,8 @@
 To run the crawler:
-`go run cmd/main.go`
+`go run cmd/main.go -url <url>`
+
+For help on what flags the crawler accepts:
+`go run cmd/main.go -help`
 
 To run unit tests:
 `go test ./...`
@@ -11,7 +14,6 @@ To-dos:
 - Make sure every function has a comment
 - Get rid of TODOs before submission
 - Expose subset of config options
-- Split out crawl logic
 - More test coverage
 
 Improvements:
