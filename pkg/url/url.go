@@ -23,11 +23,6 @@ type URL struct {
 	Path   string
 }
 
-func IsValidURL(u string) bool {
-	_, err := url.Parse(u)
-	return err == nil
-}
-
 // ParseURLString parses a string into a URL type. It takes as an argument the
 // scheme to use if the URL doesn't have one
 func ParseURLString(u string, scheme string) (*URL, error) {
