@@ -24,8 +24,8 @@ func TestNewCrawler(t *testing.T) {
 		t.Errorf("expected host to be %s, got %s", "example.com", c.Host)
 	}
 
-	if c.StartURL != "https://example.com" {
-		t.Errorf("expected url to be %s, got %s", "https://example.com", c.StartURL)
+	if c.StartURL.URL != "https://example.com/" {
+		t.Errorf("expected url to be %s, got %s", "https://example.com", c.StartURL.URL)
 	}
 }
 
@@ -39,7 +39,7 @@ func TestFetch(t *testing.T) {
 	defer server.Close()
 
 	c, _ := crawler.NewCrawlerDiscardOutput(server.URL)
-	urlToFetch, _ := url.ParseURLString(server.URL)
+	urlToFetch, _ := url.ParseURLString(server.URL, "")
 
 	doc, err := c.Fetch(urlToFetch.URL)
 	if err != nil {

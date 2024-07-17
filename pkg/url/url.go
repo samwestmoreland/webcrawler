@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	wwwPrefix     = "www."
-	defaultScheme = "https"
+	wwwPrefix = "www."
 )
 
 var hostnameRegex = regexp.MustCompile(`^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9]+)+$`)
 
+// The URL type is a simplified version of the net/url URL type with only the fields we need
 type URL struct {
 	// URL must be a valid URL, i.e. with a scheme and subdomain
 	URL    string
@@ -28,14 +28,22 @@ func IsValidURL(u string) bool {
 	return err == nil
 }
 
-func ParseURLString(u string) (*URL, error) {
+// ParseURLString parses a string into a URL type. It takes as an argument the
+// scheme to use if the URL doesn't have one
+func ParseURLString(u string, scheme string) (*URL, error) {
+	if scheme == "" {
+		scheme = "https"
+	}
+
+	fmt.Println("parsing", u)
+
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
 
 	if parsed.Scheme == "" {
-		parsed.Scheme = defaultScheme
+		parsed.Scheme = scheme
 	}
 
 	// Re-parse the URL with the default scheme, otherwise we end up with no host

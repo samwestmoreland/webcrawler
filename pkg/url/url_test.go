@@ -86,7 +86,7 @@ func TestParseURLString(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		result, err := url.ParseURLString(testCase.input)
+		result, err := url.ParseURLString(testCase.input, "")
 		if err != nil {
 			t.Errorf("Got parseURLString(%q) produced error: %v", testCase.input, err)
 		}
@@ -94,12 +94,15 @@ func TestParseURLString(t *testing.T) {
 		if result.Scheme != testCase.expected.Scheme {
 			t.Errorf("For input %q, got scheme %q, want %q", testCase.input, result.Scheme, testCase.expected.Scheme)
 		}
+
 		if result.Host != testCase.expected.Host {
 			t.Errorf("For input %q, got host %q, want %q", testCase.input, result.Host, testCase.expected.Host)
 		}
+
 		if result.Path != testCase.expected.Path {
 			t.Errorf("For input %q, got path %q, want %q", testCase.input, result.Path, testCase.expected.Path)
 		}
+
 		if result.URL != testCase.expected.URL {
 			t.Errorf("For input %q, got URL %q, want %q", testCase.input, result.URL, testCase.expected.URL)
 		}

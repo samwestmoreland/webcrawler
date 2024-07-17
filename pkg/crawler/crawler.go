@@ -31,21 +31,18 @@ type Results struct {
 }
 
 type Crawler struct {
-	// https://foo.com or https://www.subdomain.foo.com, for example. A
-	// visitable URL.
-	StartURL string
-	// timeout to set on the http client
-	RequestTimeout time.Duration
-	// the links found
-	Results     Results
-	LogFileName string
+	StartURL    *url.URL // the URL with which to start the crawl
+	Results     Results  // a Results struct containing the results of the crawl
+	LogFileName string   // the name of the log file
 
 	// www.foo.com or www.subdomain.foo.com, for example. Used for comparisons.
 	Host string
-	// links we've already seen
-	seen map[string]struct{}
 
-	client *http.Client
+	seen map[string]struct{} // for keeping track of visited URLs
+
+	// client
+	client         *http.Client
+	requestTimeout time.Duration // timeout to set on the http client
 
 	// output files
 	logger      *log.Logger
@@ -58,9 +55,14 @@ type Crawler struct {
 
 // NewCrawler creates a new Crawler
 func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, error) {
-	parsed, err := url.ParseURLString(u)
+	parsed, err := url.ParseURLString(u, "")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse url: %s", err)
+	}
+
+	// Ensure that the URL has a scheme because we'll use it later for normalising relative path URLs
+	if parsed.Scheme == "" {
+		return nil, fmt.Errorf("url must have a scheme (e.g. https): %s", u)
 	}
 
 	var httpClient = &http.Client{
@@ -68,10 +70,10 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 	}
 
 	return &Crawler{
-		StartURL:                      u,
+		StartURL:                      parsed,
 		logger:                        logger,
 		resultsFile:                   resultsFile,
-		RequestTimeout:                defaultRequestTimeout,
+		requestTimeout:                defaultRequestTimeout,
 		Host:                          parsed.Host,
 		seen:                          make(map[string]struct{}),
 		client:                        httpClient,
@@ -131,16 +133,16 @@ func (c *Crawler) Crawl() error {
 }
 
 // crawl performs a BFS traversal of the domain
-func (c *Crawler) crawl(u string) error {
+func (c *Crawler) crawl(u *url.URL) error {
 	fmt.Println("In crawl")
-	queue := []string{u}
+	queue := []string{u.URL}
 	visitedSet := make(map[string]struct{})
 
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
-		fetchableURL, err := url.ParseURLString(current)
+		fetchableURL, err := url.ParseURLString(current, c.StartURL.Scheme)
 		if err != nil {
 			c.Results.ErroredLinks = append(c.Results.ErroredLinks, erroredLink{url: current, errorMsg: err.Error()})
 			continue
