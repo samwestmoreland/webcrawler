@@ -13,17 +13,17 @@ import (
 
 // TestNewCrawler tests the creation of a new Crawler instance
 func TestNewCrawler(t *testing.T) {
-	c, err := crawler.NewCrawlerDiscardOutput("https://example.com")
+	newcrawler, err := crawler.NewCrawlerDiscardOutput("https://example.com")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if c.Host != "example.com" {
-		t.Errorf("expected host to be %s, got %s", "example.com", c.Host)
+	if newcrawler.Host != "example.com" {
+		t.Errorf("expected host to be %s, got %s", "example.com", newcrawler.Host)
 	}
 
-	if c.StartURL.URL != "https://example.com/" {
-		t.Errorf("expected url to be %s, got %s", "https://example.com", c.StartURL.URL)
+	if newcrawler.StartURL.URL != "https://example.com/" {
+		t.Errorf("expected url to be %s, got %s", "https://example.com", newcrawler.StartURL.URL)
 	}
 }
 
@@ -49,6 +49,7 @@ func TestFetch(t *testing.T) {
 
 	var buf bytes.Buffer
 	html.Render(&buf, doc)
+
 	if !strings.Contains(buf.String(), "Page1") {
 		t.Errorf("expected fetched document to contain 'Page1', got %s", buf.String())
 	}

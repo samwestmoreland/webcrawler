@@ -32,7 +32,7 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 
 	parsed, err := url.Parse(u)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse url: %s", err)
 	}
 
 	if parsed.Scheme == "" {
@@ -42,7 +42,7 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 	// Re-parse the URL with the default scheme, otherwise we end up with no host
 	parsed, err = url.Parse(parsed.String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse url: %s", err)
 	}
 
 	// For consistency, we'll use "/" as the default path if none is provided
@@ -66,7 +66,7 @@ func ResolvePath(subdomain, href string) (*URL, error) {
 
 	hrefURL, err := url.Parse(href)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse href: %s", err)
 	}
 
 	// If hrefURL is already absolute, we just return it as is
