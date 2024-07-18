@@ -4,4 +4,4 @@ linters:
     - paralleltest
     - varnamelen
     - depguard
-
+    - gomnd

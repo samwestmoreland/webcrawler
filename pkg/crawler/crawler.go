@@ -173,11 +173,11 @@ func (c *Crawler) crawl(u *url.URL) error {
 // ExtractLinks extracts links from the HTML document.
 func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 	var links []string
+
 	seen := make(map[string]struct{})
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
-		// TODO: Use a data atom here to find links instead
 		if n.Type == html.ElementNode && n.Data == "a" {
 			attrs := n.Attr
 			for _, a := range attrs {
@@ -198,7 +198,7 @@ func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 
 				seen[resolved.URL] = struct{}{}
 
-				if !c.isExternal(resolved) {
+				if !c.isInternal(resolved) {
 					c.Results.ExternalLinks = append(c.Results.ExternalLinks, resolved.URL)
 
 					continue
@@ -291,8 +291,9 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 	return doc, nil
 }
 
-func (c *Crawler) isExternal(u *url.URL) bool {
-	// TODO: return an error here as well
+// isInternal returns false if the URL is not internal to the crawler's host
+// _or_ if there is an error trying to figure it out.
+func (c *Crawler) isInternal(u *url.URL) bool {
 	same, err := url.IsSameHost(c.Host, u.Host)
 
 	return err == nil && same
@@ -319,11 +320,11 @@ func (c *Crawler) OutputResults() {
 	}
 
 	// Print stats to stdout
-	fmt.Println()
-	fmt.Println("Crawler stats:")
-	fmt.Println("-------------")
-	fmt.Printf("links found:          %d\n", len(c.Results.Links))
-	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
-	fmt.Printf("links that errorred:  %d\n", len(c.Results.ErroredLinks))
-	fmt.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
+	fmt.Println()                                                             //nolint:forbidigo
+	fmt.Println("Crawler stats:")                                             //nolint:forbidigo
+	fmt.Println("-------------")                                              //nolint:forbidigo
+	fmt.Printf("links found:          %d\n", len(c.Results.Links))            //nolint:forbidigo
+	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))    //nolint:forbidigo
+	fmt.Printf("links that errorred:  %d\n", len(c.Results.ErroredLinks))     //nolint:forbidigo
+	fmt.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds()) //nolint:forbidigo
 }
