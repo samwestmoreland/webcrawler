@@ -103,7 +103,7 @@ func NewCrawlerDiscardOutput(u string) (*Crawler, error) {
 // Crawl does some setup and then starts the crawl.
 func (c *Crawler) Crawl() error {
 	c.logger.Printf("crawling %s\n", c.StartURL.URL)
-	fmt.Printf("Crawling %s\n", c.StartURL.URL)
+	fmt.Printf("Crawling %s\n", c.StartURL.URL) //nolint:forbidigo
 
 	start := time.Now()
 	defer func() {
@@ -128,7 +128,7 @@ func (c *Crawler) crawl(u *url.URL) error {
 			case <-stop:
 				return
 			case <-ticker.C:
-				fmt.Printf("visited %d pages\n", len(visitedSet))
+				fmt.Printf("visited %d pages\n", len(visitedSet)) //nolint:forbidigo
 			}
 		}
 	}()
@@ -313,22 +313,41 @@ func (c *Crawler) isInternal(u *url.URL) bool {
 
 // OutputResults writes the results to the output file.
 func (c *Crawler) OutputResults() {
-	c.resultsFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.Results.Links))))
+	if _, err := c.resultsFile.Write(
+		[]byte(fmt.Sprintf(
+			"links found: %d\n", len(c.Results.Links)))); err != nil {
+		c.logger.Printf("error writing to results file: %v", err)
+	}
 
 	for _, link := range c.Results.Links {
-		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
+		if _, err := c.resultsFile.Write([]byte(link + "\n")); err != nil {
+			c.logger.Printf("error writing to results file: %v", err)
+		}
 	}
 
-	c.resultsFile.Write([]byte(fmt.Sprintf("\nexternal links found: %d\n", len(c.Results.ExternalLinks))))
+	if _, err := c.resultsFile.Write(
+		[]byte(fmt.Sprintf("\nexternal links found: %d\n",
+			len(c.Results.ExternalLinks)))); err != nil {
+		c.logger.Printf("error writing to results file: %v", err)
+	}
 
 	for _, link := range c.Results.ExternalLinks {
-		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
+		if _, err := c.resultsFile.Write([]byte(link + "\n")); err != nil {
+			c.logger.Printf("error writing to results file: %v", err)
+		}
 	}
 
-	c.resultsFile.Write([]byte(fmt.Sprintf("\nerrored links found: %d\n", len(c.Results.ErroredLinks))))
+	if _, err := c.resultsFile.Write(
+		[]byte(fmt.Sprintf("\nerrored links found: %d\n",
+			len(c.Results.ErroredLinks)))); err != nil {
+		c.logger.Printf("error writing to results file: %v", err)
+	}
 
 	for _, link := range c.Results.ErroredLinks {
-		c.resultsFile.Write([]byte(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg)))
+		if _, err := c.resultsFile.Write(
+			[]byte(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg))); err != nil {
+			c.logger.Printf("error writing to results file: %v", err)
+		}
 	}
 
 	// Print stats to stdout

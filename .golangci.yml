@@ -5,3 +5,7 @@ linters:
     - varnamelen
     - depguard
     - gomnd
+    - execinquery
+    - funlen
+    - exhaustruct
+    - mnd
