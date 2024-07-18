@@ -77,12 +77,54 @@ func TestParseURLString(t *testing.T) {
 		input    string
 		expected *url.URL
 	}{
-		{"https://www.foo.com", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/", URL: "https://www.foo.com/"}},
-		{"https://www.foo.com/", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/", URL: "https://www.foo.com/"}},
-		{"https://www.foo.com/bar", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/bar", URL: "https://www.foo.com/bar"}},
-		{"https://www.foo.com/bar/", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/bar/", URL: "https://www.foo.com/bar/"}},
-		{"https://www.foo.com/bar/baz", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/bar/baz", URL: "https://www.foo.com/bar/baz"}},
-		{"www.foo.com", &url.URL{Scheme: "https", Host: "www.foo.com", Path: "/", URL: "https://www.foo.com/"}},
+		{
+			"https://www.foo.com", &url.URL{
+				Scheme: "https",
+				Host:   "www.foo.com",
+				Path:   "/",
+				URL:    "https://www.foo.com/",
+			},
+		},
+		{
+			"https://www.foo.com/", &url.URL{
+				Scheme: "https",
+				Host:   "www.foo.com",
+				Path:   "/",
+				URL:    "https://www.foo.com/",
+			},
+		},
+		{
+			"https://www.foo.com/bar", &url.URL{
+				Scheme: "https",
+				Host:   "www.foo.com",
+				Path:   "/bar",
+				URL:    "https://www.foo.com/bar",
+			},
+		},
+		{
+			"https://www.foo.com/bar/", &url.URL{
+				Scheme: "https",
+				Host:   "www.foo.com",
+				Path:   "/bar/",
+				URL:    "https://www.foo.com/bar/",
+			},
+		},
+		{
+			"https://www.foo.com/bar/baz", &url.URL{
+				Scheme: "https",
+				Host:   "www.foo.com",
+				Path:   "/bar/baz",
+				URL:    "https://www.foo.com/bar/baz",
+			},
+		},
+		{
+			"www.foo.com", &url.URL{
+				Scheme: "https",
+				Host:   "www.foo.com",
+				Path:   "/",
+				URL:    "https://www.foo.com/",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
