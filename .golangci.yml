@@ -3,4 +3,5 @@ linters:
   disable:
     - paralleltest
     - varnamelen
+    - depguard
 

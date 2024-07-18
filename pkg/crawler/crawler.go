@@ -62,7 +62,7 @@ type Crawler struct {
 func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, error) {
 	parsed, err := url.ParseURLString(u, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %s", err)
+		return nil, fmt.Errorf("failed to parse url: %w", err)
 	}
 
 	// Ensure that the URL has a scheme because we'll use it later for normalising relative path URLs
@@ -244,6 +244,7 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 			if err != nil {
 				return nil, fmt.Errorf("error getting %q: %w", urlToFetch, err)
 			}
+			defer resp.Body.Close()
 
 			// Check the status code
 			if resp.StatusCode == http.StatusAccepted {
@@ -275,6 +276,7 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting %q: %w", urlToFetch, err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusAccepted {
 		return poll(urlToFetch)
@@ -282,7 +284,7 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing %q: %w", urlToFetch, err)
+		return nil, fmt.Errorf("error parsing html from %q: %w", urlToFetch, err)
 	}
 
 	return doc, nil

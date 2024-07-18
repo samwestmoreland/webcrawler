@@ -1,6 +1,7 @@
 package url
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -10,6 +11,10 @@ import (
 
 const (
 	wwwPrefix = "www."
+)
+
+var (
+	ErrInvalidHost = errors.New("invalid host")
 )
 
 var hostnameRegex = regexp.MustCompile(`^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9]+)+$`)
@@ -32,7 +37,7 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 
 	parsed, err := url.Parse(u)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %s", err)
+		return nil, fmt.Errorf("failed to parse url: %w", err)
 	}
 
 	if parsed.Scheme == "" {
@@ -42,7 +47,7 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 	// Re-parse the URL with the default scheme, otherwise we end up with no host
 	parsed, err = url.Parse(parsed.String())
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %s", err)
+		return nil, fmt.Errorf("failed to parse url: %w", err)
 	}
 
 	// For consistency, we'll use "/" as the default path if none is provided
@@ -66,7 +71,7 @@ func ResolvePath(subdomain, href string) (*URL, error) {
 
 	hrefURL, err := url.Parse(href)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse href: %s", err)
+		return nil, fmt.Errorf("failed to parse href: %w", err)
 	}
 
 	// If hrefURL is already absolute, we just return it as is
@@ -99,11 +104,11 @@ func ResolvePath(subdomain, href string) (*URL, error) {
 
 func IsSameHost(hostA, hostB string) (bool, error) {
 	if !hostnameRegex.MatchString(hostA) {
-		return false, fmt.Errorf("invalid host: %q", hostA)
+		return false, fmt.Errorf("invalid host: %q: %w", hostA, ErrInvalidHost)
 	}
 
 	if !hostnameRegex.MatchString(hostB) {
-		return false, fmt.Errorf("invalid host: %q", hostB)
+		return false, fmt.Errorf("invalid host: %q: %w", hostB, ErrInvalidHost)
 	}
 
 	return strings.TrimPrefix(hostA, wwwPrefix) ==

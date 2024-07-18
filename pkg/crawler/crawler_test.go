@@ -29,7 +29,7 @@ func TestNewCrawler(t *testing.T) {
 
 // TestFetch tests the fetch function
 func TestFetch(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(`<html><body><a href="https://example.com/page1">Page1</a></body></html>`))
