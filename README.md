@@ -20,7 +20,7 @@ The project has two subpackages: `crawler` and `url`. The `crawler` package cont
 The `url` package contains some helper methods for working with URLs. It defines a URL type which is just contains a subset of useful fields of the URL type in the standard library.
 
 ## If a 202 response is received
-If a 202 "Status Accepted" response is received, the crawler will poll the URL for a maximum of 5 times with a 5 second delay between each request. If a 200 response is never received, the URL will be marked as errored.
+If a 202 "Status Accepted" response is received, the crawler will poll the URL a maximum of 5 times with a 5 second delay between each request. If a 200 response is never received, the URL will be marked as errored.
 
 # Planned improvements
 - Explore possible performance gains from introducing concurrency into the BFS. Have tried this but preliminary results were slower than the single-threaded version, likely due to contention over the `visitedSet` map.
