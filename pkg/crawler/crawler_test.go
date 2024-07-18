@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-// TestNewCrawler tests the creation of a new Crawler instance
+// TestNewCrawler tests the creation of a new Crawler instance.
 func TestNewCrawler(t *testing.T) {
 	newcrawler, err := crawler.NewCrawlerDiscardOutput("https://example.com")
 	if err != nil {
@@ -27,7 +27,7 @@ func TestNewCrawler(t *testing.T) {
 	}
 }
 
-// TestFetch tests the fetch function
+// TestFetch tests the fetch function.
 func TestFetch(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -57,7 +57,7 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-// TestExtractLinks tests the link extraction from HTML document
+// TestExtractLinks tests the link extraction from HTML document.
 func TestExtractLinks(t *testing.T) {
 	htmlData := `<html><body>
 	<a href="https://example.com/page1">Page1</a>

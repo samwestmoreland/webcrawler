@@ -13,13 +13,11 @@ const (
 	wwwPrefix = "www."
 )
 
-var (
-	ErrInvalidHost = errors.New("invalid host")
-)
+var ErrInvalidHost = errors.New("invalid host")
 
 var hostnameRegex = regexp.MustCompile(`^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9]+)+$`)
 
-// The URL type is a simplified version of the net/url URL type with only the fields we need
+// The URL type is a simplified version of the net/url URL type with only the fields we need.
 type URL struct {
 	// URL must be a valid URL, i.e. with a scheme and subdomain
 	URL    string
@@ -29,7 +27,7 @@ type URL struct {
 }
 
 // ParseURLString parses a string into a URL type. It takes as an argument the
-// scheme to use if the URL doesn't have one
+// scheme to use if the URL doesn't have one.
 func ParseURLString(u string, scheme string) (*URL, error) {
 	if scheme == "" {
 		scheme = "https"
@@ -64,7 +62,7 @@ func ParseURLString(u string, scheme string) (*URL, error) {
 }
 
 // ResolvePath resolves relative URLs into absolute URLs (against the given base).
-// The base is expected to be just a subdomain, e.g. "foo.com"
+// The base is expected to be just a subdomain, e.g. "foo.com".
 func ResolvePath(subdomain, href string) (*URL, error) {
 	// Trim any leading white spaces
 	href = strings.TrimSpace(href)

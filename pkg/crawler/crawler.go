@@ -19,7 +19,7 @@ const (
 	defaultRequestTimeout                = 5 * time.Second
 )
 
-// Errors
+// Errors.
 var (
 	ErrMaxRetriesReached = errors.New("max retries reached")
 	ErrBadStatusCode     = errors.New("got bad response code")
@@ -58,7 +58,7 @@ type Crawler struct {
 	statusAcceptedPollingInterval time.Duration
 }
 
-// NewCrawler creates a new Crawler
+// NewCrawler creates a new Crawler.
 func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, error) {
 	parsed, err := url.ParseURLString(u, "")
 	if err != nil {
@@ -70,7 +70,7 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 		return nil, fmt.Errorf("url must have a scheme (e.g. https): %s: %w", u, ErrURLMissingScheme)
 	}
 
-	var httpClient = &http.Client{
+	httpClient := &http.Client{
 		Timeout: defaultRequestTimeout,
 	}
 
@@ -94,12 +94,12 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 	}, nil
 }
 
-// NewCrawlerDiscardOutput creates a new Crawler with no output. Used for testing
+// NewCrawlerDiscardOutput creates a new Crawler with no output. Used for testing.
 func NewCrawlerDiscardOutput(u string) (*Crawler, error) {
 	return NewCrawler(u, log.New(io.Discard, "", 0), io.Discard)
 }
 
-// Crawl does some setup and then starts the crawl
+// Crawl does some setup and then starts the crawl.
 func (c *Crawler) Crawl() error {
 	c.logger.Printf("crawling %s\n", c.StartURL.URL)
 	fmt.Printf("Crawling %s\n", c.StartURL.URL)
@@ -112,7 +112,7 @@ func (c *Crawler) Crawl() error {
 	return c.crawl(c.StartURL)
 }
 
-// crawl performs a BFS traversal of the domain
+// crawl performs a BFS traversal of the domain.
 func (c *Crawler) crawl(u *url.URL) error {
 	queue := []string{u.URL}
 	visitedSet := make(map[string]struct{})
@@ -170,14 +170,14 @@ func (c *Crawler) crawl(u *url.URL) error {
 	return nil
 }
 
-// ExtractLinks extracts links from the HTML document
+// ExtractLinks extracts links from the HTML document.
 func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 	var links []string
-	var seen = make(map[string]struct{})
+	seen := make(map[string]struct{})
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
-		//TODO: Use a data atom here to find links instead
+		// TODO: Use a data atom here to find links instead
 		if n.Type == html.ElementNode && n.Data == "a" {
 			attrs := n.Attr
 			for _, a := range attrs {
@@ -232,7 +232,7 @@ func (c *Crawler) doGetWithContext(ctx context.Context, url string) (*http.Respo
 }
 
 // Fetch performs an HTTP GET request. It expects a fully qualified URL
-// to be passed in, i.e. one with a scheme and hostname
+// to be passed in, i.e. one with a scheme and hostname.
 func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 	poll := func(urlToFetch string) (*html.Node, error) {
 		for range c.statusAcceptedMaxRetries {
@@ -292,13 +292,13 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 }
 
 func (c *Crawler) isExternal(u *url.URL) bool {
-	//TODO: return an error here as well
+	// TODO: return an error here as well
 	same, err := url.IsSameHost(c.Host, u.Host)
 
 	return err == nil && same
 }
 
-// OutputResults writes the results to the output file
+// OutputResults writes the results to the output file.
 func (c *Crawler) OutputResults() {
 	c.resultsFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.Results.Links))))
 

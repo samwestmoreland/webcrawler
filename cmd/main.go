@@ -19,14 +19,14 @@ func main() {
 		log.Fatal("A URL must be specified")
 	}
 
-	logFile, err := os.OpenFile(*logFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	logFile, err := os.OpenFile(*logFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	logger := log.New(logFile, "", log.Ldate|log.Ltime)
 
-	resultsFile, err := os.OpenFile(*outputFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	resultsFile, err := os.OpenFile(*outputFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		log.Fatal(err)
 	}
