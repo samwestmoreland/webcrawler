@@ -84,38 +84,6 @@ func NewCrawlerDiscardOutput(u string) (*Crawler, error) {
 	return NewCrawler(u, log.New(ioutil.Discard, "", 0), ioutil.Discard)
 }
 
-// OutputResults writes the results to the output file
-func (c *Crawler) OutputResults() {
-	// Write the links to the log file
-	c.resultsFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.Results.Links))))
-	for _, link := range c.Results.Links {
-		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
-	}
-
-	c.resultsFile.Write([]byte("\n"))
-
-	c.resultsFile.Write([]byte(fmt.Sprintf("external links found: %d\n", len(c.Results.ExternalLinks))))
-	for _, link := range c.Results.ExternalLinks {
-		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
-	}
-
-	c.resultsFile.Write([]byte("\n"))
-
-	c.resultsFile.Write([]byte(fmt.Sprintf("errored links found: %d\n", len(c.Results.ErroredLinks))))
-	for _, link := range c.Results.ErroredLinks {
-		c.resultsFile.Write([]byte(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg)))
-	}
-
-	// Print stats to stdout
-	fmt.Println()
-	fmt.Println("Crawler stats:")
-	fmt.Println("-------------")
-	fmt.Printf("links found:          %d\n", len(c.Results.Links))
-	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
-	fmt.Printf("links that errorred:  %d\n", len(c.Results.ErroredLinks))
-	fmt.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
-}
-
 // Crawl does some setup and then starts the crawl
 func (c *Crawler) Crawl() error {
 	c.logger.Printf("crawling %s\n", c.StartURL.URL)
@@ -292,4 +260,36 @@ func (c *Crawler) isValidURL(u *url.URL) bool {
 	same, err := url.IsSameHost(c.Host, u.Host)
 
 	return err == nil && same
+}
+
+// OutputResults writes the results to the output file
+func (c *Crawler) OutputResults() {
+	// Write the links to the log file
+	c.resultsFile.Write([]byte(fmt.Sprintf("links found: %d\n", len(c.Results.Links))))
+	for _, link := range c.Results.Links {
+		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
+	}
+
+	c.resultsFile.Write([]byte("\n"))
+
+	c.resultsFile.Write([]byte(fmt.Sprintf("external links found: %d\n", len(c.Results.ExternalLinks))))
+	for _, link := range c.Results.ExternalLinks {
+		c.resultsFile.Write([]byte(fmt.Sprintf("%s\n", link)))
+	}
+
+	c.resultsFile.Write([]byte("\n"))
+
+	c.resultsFile.Write([]byte(fmt.Sprintf("errored links found: %d\n", len(c.Results.ErroredLinks))))
+	for _, link := range c.Results.ErroredLinks {
+		c.resultsFile.Write([]byte(fmt.Sprintf("%s: %s\n", link.url, link.errorMsg)))
+	}
+
+	// Print stats to stdout
+	fmt.Println()
+	fmt.Println("Crawler stats:")
+	fmt.Println("-------------")
+	fmt.Printf("links found:          %d\n", len(c.Results.Links))
+	fmt.Printf("external links found: %d\n", len(c.Results.ExternalLinks))
+	fmt.Printf("links that errorred:  %d\n", len(c.Results.ErroredLinks))
+	fmt.Printf("crawling took %.2f seconds\n", c.Results.TotalTime.Seconds())
 }
