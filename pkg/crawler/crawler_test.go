@@ -32,7 +32,7 @@ func TestFetch(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`<html><body><a href="https://example.com/page1">Page1</a></body></html>`))
+		_, _ = w.Write([]byte(`<html><body><a href="https://example.com/page1">Page1</a></body></html>`))
 	}))
 	defer server.Close()
 
@@ -48,7 +48,9 @@ func TestFetch(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	html.Render(&buf, doc)
+	if err := html.Render(&buf, doc); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
 	if !strings.Contains(buf.String(), "Page1") {
 		t.Errorf("expected fetched document to contain 'Page1', got %s", buf.String())

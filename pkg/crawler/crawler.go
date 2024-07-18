@@ -181,11 +181,7 @@ func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 		if n.Type == html.ElementNode && n.Data == "a" {
 			attrs := n.Attr
 			for _, a := range attrs {
-				if a.Key != "href" {
-					continue
-				}
-
-				if a.Val == "" {
+				if a.Key != "href" || a.Val == "" {
 					continue
 				}
 
@@ -202,7 +198,7 @@ func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 
 				seen[resolved.URL] = struct{}{}
 
-				if !c.isValidURL(resolved) {
+				if !c.isExternal(resolved) {
 					c.Results.ExternalLinks = append(c.Results.ExternalLinks, resolved.URL)
 
 					continue
@@ -269,7 +265,12 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 			return doc, nil
 		}
 
-		return nil, fmt.Errorf("failed to fetch %q after %d retries: %w", urlToFetch, c.statusAcceptedMaxRetries, ErrMaxRetriesReached)
+		return nil, fmt.Errorf(
+			"failed to fetch %q after %d retries: %w",
+			urlToFetch,
+			c.statusAcceptedMaxRetries,
+			ErrMaxRetriesReached,
+		)
 	}
 
 	resp, err := c.doGetWithContext(context.Background(), urlToFetch)
@@ -290,7 +291,7 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 	return doc, nil
 }
 
-func (c *Crawler) isValidURL(u *url.URL) bool {
+func (c *Crawler) isExternal(u *url.URL) bool {
 	//TODO: return an error here as well
 	same, err := url.IsSameHost(c.Host, u.Host)
 
