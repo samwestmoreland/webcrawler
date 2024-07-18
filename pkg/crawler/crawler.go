@@ -38,8 +38,6 @@ type Crawler struct {
 	// www.foo.com or www.subdomain.foo.com, for example. Used for comparisons.
 	Host string
 
-	seen map[string]struct{} // for keeping track of visited URLs
-
 	// client
 	client         *http.Client
 	requestTimeout time.Duration // timeout to set on the http client
@@ -75,7 +73,6 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 		resultsFile:                   resultsFile,
 		requestTimeout:                defaultRequestTimeout,
 		Host:                          parsed.Host,
-		seen:                          make(map[string]struct{}),
 		client:                        httpClient,
 		statusAcceptedMaxRetries:      defaultMaxRetriesOnStatusAccepted,
 		statusAcceptedPollingInterval: defaultStatusAcceptedPollingInterval,
@@ -191,6 +188,7 @@ func (c *Crawler) crawl(u *url.URL) error {
 // ExtractLinks extracts links from the HTML document
 func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 	var links []string
+	var seen = make(map[string]struct{})
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {
@@ -206,23 +204,23 @@ func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 					continue
 				}
 
-				normalised, err := url.ResolvePath(c.Host, a.Val)
+				resolved, err := url.ResolvePath(c.Host, a.Val)
 				if err != nil {
 					c.Results.ErroredLinks = append(c.Results.ErroredLinks, erroredLink{url: a.Val, errorMsg: err.Error()})
 					continue
 				}
 
-				if _, ok := c.seen[normalised.URL]; ok {
+				if _, ok := seen[resolved.URL]; ok {
 					continue
 				}
-				c.seen[normalised.URL] = struct{}{}
+				seen[resolved.URL] = struct{}{}
 
-				if !c.isValidURL(normalised) {
-					c.Results.ExternalLinks = append(c.Results.ExternalLinks, normalised.URL)
+				if !c.isValidURL(resolved) {
+					c.Results.ExternalLinks = append(c.Results.ExternalLinks, resolved.URL)
 					continue
 				}
 
-				links = append(links, normalised.URL)
+				links = append(links, resolved.URL)
 			}
 		}
 
