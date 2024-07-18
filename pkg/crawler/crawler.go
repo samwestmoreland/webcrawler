@@ -172,8 +172,6 @@ func (c *Crawler) crawl(u *url.URL) error {
 			return fmt.Errorf("error extracting links: %w", err)
 		}
 
-		c.logger.Printf("found %d links\n", len(links))
-
 		// validation is done in ExtractLinks() _and_ before we fetch, so
 		// we can safely just add to the queue here
 		queue = append(queue, links...)
