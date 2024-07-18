@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -16,6 +17,13 @@ const (
 	defaultMaxRetriesOnStatusAccepted    = 5
 	defaultStatusAcceptedPollingInterval = 5 * time.Second
 	defaultRequestTimeout                = 5 * time.Second
+)
+
+// Errors
+var (
+	ErrMaxRetriesReached = errors.New("max retries reached")
+	ErrBadStatusCode     = errors.New("got bad response code")
+	ErrURLMissingScheme  = errors.New("url missing scheme")
 )
 
 type erroredLink struct {
@@ -59,7 +67,7 @@ func NewCrawler(u string, logger *log.Logger, resultsFile io.Writer) (*Crawler, 
 
 	// Ensure that the URL has a scheme because we'll use it later for normalising relative path URLs
 	if parsed.Scheme == "" {
-		return nil, fmt.Errorf("url must have a scheme (e.g. https): %s", u)
+		return nil, fmt.Errorf("url must have a scheme (e.g. https): %s: %w", u, ErrURLMissingScheme)
 	}
 
 	var httpClient = &http.Client{
@@ -216,12 +224,12 @@ func (c *Crawler) ExtractLinks(doc *html.Node) ([]string, error) {
 func (c *Crawler) doGetWithContext(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %s", err)
+		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error executing request: %s", err)
+		return nil, fmt.Errorf("error executing request: %w", err)
 	}
 
 	return resp, nil
@@ -234,7 +242,7 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 		for range c.statusAcceptedMaxRetries {
 			resp, err := c.doGetWithContext(context.Background(), urlToFetch)
 			if err != nil {
-				return nil, fmt.Errorf("error getting %q: %s", urlToFetch, err)
+				return nil, fmt.Errorf("error getting %q: %w", urlToFetch, err)
 			}
 
 			// Check the status code
@@ -249,18 +257,18 @@ func (c *Crawler) Fetch(urlToFetch string) (*html.Node, error) {
 			}
 
 			if resp.StatusCode != http.StatusOK {
-				return nil, fmt.Errorf("error: status code %d", resp.StatusCode)
+				return nil, ErrBadStatusCode
 			}
 
 			doc, err := html.Parse(resp.Body)
 			if err != nil {
-				return nil, fmt.Errorf("error parsing %q: %s", urlToFetch, err)
+				return nil, fmt.Errorf("error parsing %q: %w", urlToFetch, err)
 			}
 
 			return doc, nil
 		}
 
-		return nil, fmt.Errorf("failed to fetch %q after %d retries", urlToFetch, c.statusAcceptedMaxRetries)
+		return nil, fmt.Errorf("failed to fetch %q after %d retries: %w", urlToFetch, c.statusAcceptedMaxRetries, ErrMaxRetriesReached)
 	}
 
 	resp, err := c.doGetWithContext(context.Background(), urlToFetch)
