@@ -17,6 +17,7 @@ const (
 	defaultMaxRetriesOnStatusAccepted    = 5
 	defaultStatusAcceptedPollingInterval = 5 * time.Second
 	defaultRequestTimeout                = 5 * time.Second
+	tickerInterval                       = 2 * time.Second
 )
 
 // Errors.
@@ -117,6 +118,23 @@ func (c *Crawler) crawl(u *url.URL) error {
 	queue := []string{u.URL}
 	visitedSet := make(map[string]struct{})
 
+	// Periodically output number of pages visited
+	ticker := time.NewTicker(tickerInterval)
+	stop := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				fmt.Printf("visited %d pages\n", len(visitedSet))
+			}
+		}
+	}()
+
+	defer close(stop)
+
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
@@ -159,12 +177,6 @@ func (c *Crawler) crawl(u *url.URL) error {
 		// validation is done in ExtractLinks() _and_ before we fetch, so
 		// we can safely just add to the queue here
 		queue = append(queue, links...)
-
-		// Log every 100 visited pages so the user knows progress is being made
-		if len(visitedSet)%100 == 0 {
-			c.logger.Printf("visited %d pages\n", len(visitedSet))
-			fmt.Printf("visited %d pages\n", len(visitedSet))
-		}
 	}
 
 	return nil
